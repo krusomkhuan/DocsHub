@@ -1,5 +1,5 @@
 -- Docs Hub install schema + default data
--- APP_VERSION 1.23.2 · db_version 13 (DB_SCHEMA_LATEST 13)
+-- APP_VERSION 1.23.3 · db_version 13 (DB_SCHEMA_LATEST 13)
 -- สร้างด้วย tools/dump-schema.php --install (ไม่มีผู้ใช้ ข้อมูลส่วนบุคคล หรือค่าลับ)
 
 SET NAMES utf8mb4;

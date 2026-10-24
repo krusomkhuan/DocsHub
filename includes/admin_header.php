@@ -54,6 +54,7 @@ $menu = [
         <div class="nav-section">ทางลัด</div>
         <a class="nav-link" href="<?= url('manual.php#admin') ?>" target="_blank"><i class="bi bi-book me-2"></i>คู่มือการใช้งาน</a>
         <a class="nav-link" href="<?= url('index.php') ?>" target="_blank"><i class="bi bi-box-arrow-up-right me-2"></i>หน้าบ้าน</a>
+        <a class="nav-link" href="https://krusomkhuan.com/prompthub/public/" target="_blank" rel="noopener" title="ศูนย์รวมคำสั่ง AI (Prompt) ภาษาไทย"><i class="bi bi-stars me-2"></i>Prompt Hub</a>
         <a class="nav-link" href="<?= url('logout.php') ?>"><i class="bi bi-box-arrow-right me-2"></i>ออกจากระบบ</a>
       </div>
     </nav>
