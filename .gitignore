@@ -1,0 +1,15 @@
+# ข้อมูลผู้ใช้และไฟล์เฉพาะเครื่อง — ห้ามขึ้น git (repo สาธารณะ)
+/uploads/*
+!/uploads/.htaccess
+/backups/*
+!/backups/.htaccess
+/includes/installed.lock
+
+# ไฟล์ export ฐานข้อมูลของเครื่องอาจมีผู้ใช้/hash รหัสผ่าน/IP
+# ไฟล์ติดตั้งที่สะอาดสร้างได้ด้วย: php tools/dump-schema.php --install
+/database/docshub.sql
+
+/.claude/
+*.log
+__pycache__/
+*.pyc

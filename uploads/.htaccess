@@ -1,0 +1,2 @@
+# ห้ามเข้าถึงไฟล์โดยตรง ดาวน์โหลดผ่าน download.php เท่านั้น
+Require all denied
