@@ -31,7 +31,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $db->query('CREATE DATABASE IF NOT EXISTS `' . DB_NAME . '` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci');
             $db->select_db(DB_NAME);
 
-            $sql = file_get_contents(__DIR__ . '/database/docshub.sql');
+            // ไฟล์ติดตั้งที่สะอาด (ไม่มีผู้ใช้/ข้อมูลส่วนบุคคล) สร้างด้วย tools/dump-schema.php --install
+            // ไม่มีไฟล์นี้ จึงใช้ database/docshub.sql แบบเดิม
+            $sqlFile = is_file(__DIR__ . '/database/install.sql') ? __DIR__ . '/database/install.sql' : __DIR__ . '/database/docshub.sql';
+            $sql = file_get_contents($sqlFile);
             $db->multi_query($sql);
             do {
                 if ($r = $db->store_result()) $r->free();

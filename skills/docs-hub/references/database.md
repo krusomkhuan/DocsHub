@@ -2,8 +2,8 @@
 
 - ฐานข้อมูล `docshub` (MariaDB 10.4, InnoDB, utf8mb4) · โครงสร้างล่าสุด **v13** (`settings.db_version`, `DB_SCHEMA_LATEST` ใน `includes/migrate.php`)
 - โครงสร้างเต็มดู `schema.sql` (สร้างด้วย `tools/dump-schema.php`, ไม่มีข้อมูล)
-- ติดตั้งใหม่: `install.php` รัน `database/docshub.sql` แล้วสร้างผู้ดูแล → เปิดเว็บครั้งแรก `migrate.php` ปรับจนถึงเวอร์ชันล่าสุด
-- ชุดซอร์สในสกิลนี้ใช้ `database/docshub.sql` ที่สร้างด้วย `tools/dump-schema.php --install` (โครงสร้าง + ข้อมูลตั้งต้น: ประเภทเอกสาร หมวด แผนก ปีการศึกษา นโยบาย PDPA และ settings ที่ไม่ลับ · ไม่มีผู้ใช้)
+- ติดตั้งใหม่: `install.php` รัน `database/install.sql` (ถ้าไม่มีใช้ `database/docshub.sql`) แล้วสร้างผู้ดูแล → เปิดเว็บครั้งแรก `migrate.php` ปรับจนถึงเวอร์ชันล่าสุด
+- `database/install.sql` (อยู่ใน git และในชุดซอร์สของสกิล) สร้างด้วย `tools/dump-schema.php --install` (`skills/build_skill.py` สร้างใหม่ให้ทุกครั้ง) (โครงสร้าง + ข้อมูลตั้งต้น: ประเภทเอกสาร หมวด แผนก ปีการศึกษา นโยบาย PDPA และ settings ที่ไม่ลับ · ไม่มีผู้ใช้)
 
 ## ตาราง
 
@@ -30,5 +30,5 @@
 ## หลักการ
 - ทุก query ผ่าน `db_*` + prepared statements · ตัวกรองแบบไดนามิกสร้าง `$where`, `$types`, `$params` แบบ `document_filters()`
 - จำนวนเงิน `DECIMAL` แสดงด้วย `money()` · วันที่ `DATE`/`DATETIME` แสดงด้วย `thai_date()`
-- ตารางใหม่ต้องเพิ่มใน migrate (ไม่ต้องแก้ `database/docshub.sql` ด้วยมือ) · ถ้าข้อมูลใหม่เป็นข้อมูลส่วนบุคคล → อัปเดต PDPA export/anonymize
+- ตารางใหม่ต้องเพิ่มใน migrate (ไม่ต้องแก้ไฟล์ .sql ด้วยมือ — รัน `py skills\build_skill.py` เพื่อสร้าง `database/install.sql` ใหม่) · ถ้าข้อมูลใหม่เป็นข้อมูลส่วนบุคคล → อัปเดต PDPA export/anonymize
 - การทดสอบบนฐานข้อมูลจริง: ลบเฉพาะแถวที่สร้างจากการทดสอบ (ตั้งชื่อขึ้นต้น `ZZTEST`/`zzt_`) ห้าม TRUNCATE หรือลบข้อมูลจริง

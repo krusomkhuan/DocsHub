@@ -1,7 +1,7 @@
 # Docs Hub — ศูนย์รวมงานจัดเก็บเอกสาร
 ระบบเว็บแอปศูนย์รวมเอกสาร วิทยาลัยการอาชีพโพนทอง (PHP 8 + MySQLi + Bootstrap 5)
 
-- **เวอร์ชัน:** 1.23.1
+- **เวอร์ชัน:** 1.23.2
 - **ผู้พัฒนาระบบ:** ครูสมควร สากำ ครูแผนกวิชาเทคโนโลยีธุรกิจดิจิทัล
 
 > เปลี่ยนเลขเวอร์ชัน/ชื่อผู้พัฒนาได้ที่ `APP_VERSION`, `APP_DEVELOPER`, `APP_DEVELOPER_DEPT` ใน `includes/config.php`
@@ -12,6 +12,8 @@
 3. เปิด `http://localhost/docshub/` ระบบจะพาไปหน้า `install.php`
 4. ตั้งชื่อผู้ใช้และรหัสผ่านผู้ดูแลระบบ แล้วกด "ติดตั้งระบบ"
 5. ถ้าต้องการติดตั้งใหม่ ให้ลบไฟล์ `includes/installed.lock`
+
+> `install.php` สร้างตารางจาก `database/install.sql` (โครงสร้าง + ข้อมูลตั้งต้น ไม่มีผู้ใช้ สร้างด้วย `php tools/dump-schema.php --install`) · `database/docshub.sql` เป็นไฟล์ export ของเครื่อง ไม่อยู่ใน git
 
 > ถ้าต้องการอัปโหลดไฟล์ใหญ่กว่า 40 MB ให้แก้ `upload_max_filesize` และ `post_max_size` ใน `C:\xampp\php\php.ini`
 

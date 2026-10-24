@@ -7,7 +7,7 @@
 | `docs-hub-skill.zip` | **ไฟล์สำหรับอัปโหลดเข้า ChatGPT** (ภายในคือโฟลเดอร์ `docs-hub/`) |
 | `docs-hub/SKILL.md` | คำสั่งหลักของสกิล |
 | `docs-hub/references/*` | เอกสารอ้างอิงที่ ChatGPT เปิดอ่านเมื่อจำเป็น (+ `schema.sql` โครงสร้างฐานข้อมูล) |
-| `docs-hub/assets/docs-hub-source.zip` | ซอร์สโค้ดเวอร์ชันปัจจุบัน — ไม่มีไฟล์ที่อัปโหลด ไฟล์สำรอง ผู้ใช้ หรือค่าลับ (`database/docshub.sql` ในชุดนี้เป็นไฟล์ติดตั้งที่สะอาด) |
+| `docs-hub/assets/docs-hub-source.zip` | ซอร์สโค้ดเวอร์ชันปัจจุบัน — ไม่มีไฟล์ที่อัปโหลด ไฟล์สำรอง ผู้ใช้ หรือค่าลับ (ใช้ `database/install.sql` ที่สะอาด) |
 | `build_skill.py` | สร้าง zip ใหม่หลังแก้โค้ด |
 
 > โฟลเดอร์ `skills/` ใช้บนเครื่องพัฒนาเท่านั้น **ไม่ต้องอัปโหลดขึ้นเซิร์ฟเวอร์** (มี `.htaccess` ปิดการเข้าถึงไว้แล้ว)
@@ -45,4 +45,4 @@ python skills\build_skill.py
 
 แล้วอัปโหลด `docs-hub-skill.zip` ใหม่ (หรือแทนที่ไฟล์ใน Project) · ถ้ามีฟีเจอร์ใหม่ ให้อัปเดตเลขเวอร์ชันใน `docs-hub/SKILL.md` และ `references/features.md`
 
-> สคริปต์จะหยุดถ้าพบข้อความที่ดูเหมือนคีย์ลับ/โทเคน/hash รหัสผ่าน หรือ `DB_PASS` ที่ไม่ว่างใน `includes/config.php` และจะไม่ใส่ `database/docshub.sql` ของเครื่อง (ใช้ไฟล์ที่สร้างจาก `tools/dump-schema.php --install` แทน)
+> สคริปต์จะหยุดถ้าพบข้อความที่ดูเหมือนคีย์ลับ/โทเคน/hash รหัสผ่าน หรือ `DB_PASS` ที่ไม่ว่างใน `includes/config.php` จะไม่ใส่ `database/docshub.sql` ของเครื่อง และสร้าง `database/install.sql` (ไฟล์ติดตั้งที่สะอาด) ใหม่ให้ทุกครั้ง

@@ -1,5 +1,5 @@
 -- Docs Hub database structure (no data)
--- APP_VERSION 1.23.1 · db_version 13 (DB_SCHEMA_LATEST 13)
+-- APP_VERSION 1.23.2 · db_version 13 (DB_SCHEMA_LATEST 13)
 -- สร้างด้วย tools/dump-schema.php
 
 CREATE TABLE `academic_years` (

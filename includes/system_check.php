@@ -165,7 +165,7 @@ function run_system_checks(bool $httpProbe = true): array
         $g[] = sc_item($ok ? 'ok' : 'fail', "ไฟล์ป้องกัน $d/.htaccess", $ok ? 'ปิดการเข้าถึงจากเว็บ' : 'ไม่พบหรือไม่ได้ปิดการเข้าถึง');
     }
     if ($httpProbe && ini_get('allow_url_fopen')) {
-        foreach (['includes/config.php' => 'ไฟล์ตั้งค่า', 'database/docshub.sql' => 'ไฟล์โครงสร้างฐานข้อมูล', 'uploads/.htaccess' => 'โฟลเดอร์อัปโหลด', 'tools/backup.php' => 'เครื่องมือบรรทัดคำสั่ง'] as $p => $lbl) {
+        foreach (['includes/config.php' => 'ไฟล์ตั้งค่า', 'database/install.sql' => 'ไฟล์ติดตั้งฐานข้อมูล', 'uploads/.htaccess' => 'โฟลเดอร์อัปโหลด', 'tools/backup.php' => 'เครื่องมือบรรทัดคำสั่ง'] as $p => $lbl) {
             $code = sc_http_status($p);
             $g[] = sc_item($code === null ? 'info' : (in_array($code, [403, 404], true) ? 'ok' : 'fail'), 'ทดสอบเปิดตรงจากเว็บ: ' . $lbl, $code === null ? 'ทดสอบไม่ได้จากเซิร์ฟเวอร์นี้' : 'HTTP ' . $code . (in_array($code, [403, 404], true) ? ' (ถูกปิดกั้น)' : ' — เปิดได้! ตรวจสอบ AllowOverride ของ Apache'));
         }

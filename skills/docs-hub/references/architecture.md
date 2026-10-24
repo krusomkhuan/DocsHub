@@ -33,7 +33,7 @@ pdpa_enforce()        ยังไม่ยอมรับนโยบายฉ�
 | `google-login.php`, `google-callback.php`, `google-register.php`, `gdrive-connect.php` | OAuth กับ Google (เข้าสู่ระบบ / เชื่อมบัญชี / เชื่อม Drive) |
 | `privacy.php`, `pdpa-consent.php`, `my-data.php` | PDPA |
 | `manual.php` | คู่มือการใช้งาน (สารบัญ 15 หัวข้อ พิมพ์เป็น PDF ได้) |
-| `install.php` | ติดตั้งครั้งแรก (สร้างตารางจาก `database/docshub.sql` + ผู้ดูแล) ล็อกด้วย `includes/installed.lock` |
+| `install.php` | ติดตั้งครั้งแรก (สร้างตารางจาก `database/install.sql` — ไม่มีจึงใช้ `database/docshub.sql` — + ผู้ดูแล) ล็อกด้วย `includes/installed.lock` |
 
 ## หลังบ้าน (`admin/`)
 
@@ -67,6 +67,6 @@ pdpa_enforce()        ยังไม่ยอมรับนโยบายฉ�
 ## ไฟล์อื่น
 
 - `assets/css/style.css`, `assets/js/app.js` (ปุ่ม `data-copy`, confirm ฟอร์ม `data-confirm`, ฯลฯ)
-- `database/docshub.sql` โครงสร้างเริ่มต้นสำหรับติดตั้ง, `database/integrity.json` ค่าอ้างอิงไฟล์
+- `database/install.sql` ไฟล์ติดตั้งที่สะอาด (สร้างด้วย `tools/dump-schema.php --install`), `database/docshub.sql` ไฟล์ของเครื่อง (ไม่อยู่ใน git อาจมีข้อมูลจริง), `database/integrity.json` ค่าอ้างอิงไฟล์
 - `tools/` (CLI เท่านั้น, ปิดเว็บด้วย .htaccess): `check.php`, `backup.php`, `backup-task.bat`, `restore.php`, `move-to-drive.php`, `reset-admin.php`, `dump-schema.php`
 - `uploads/` (ปิดเว็บ) `uploads/docs/YYYY/MM/...` ไฟล์ในเครื่อง, `uploads/docs/avatars/`, `uploads/docs/trips/` · `backups/` ไฟล์สำรอง (ปิดเว็บ)

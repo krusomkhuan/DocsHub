@@ -20,7 +20,7 @@ PHP = r'C:\xampp\php\php.exe'
 
 # ไม่เอาเข้า zip (ข้อมูลผู้ใช้/ไฟล์ที่อัปโหลด/ไฟล์สำรอง/ไฟล์เฉพาะเครื่อง)
 SKIP_DIRS = {'.git', '.claude', 'skills', '__pycache__'}
-SKIP_FILES = [r'^includes/installed\.lock$', r'^database/docshub\.sql$', r'\.log$', r'\.pyc$',
+SKIP_FILES = [r'^includes/installed\.lock$', r'^database/docshub\.sql$', r'^database/install\.sql$', r'\.log$', r'\.pyc$',
               r'^uploads/(?!\.htaccess$|docs/\.htaccess$).+', r'^backups/(?!\.htaccess$).+']
 # ถ้าพบในไฟล์ใด ให้หยุดทันที
 SECRET_PATTERNS = [rb'GOCSPX-[A-Za-z0-9_-]{10,}', rb'\b1//0[A-Za-z0-9_-]{20,}', rb'\bya29\.[A-Za-z0-9_-]{20,}',
@@ -58,7 +58,9 @@ def build():
     with open(os.path.join(SKILL, 'references', 'schema.sql'), 'wb') as f:
         f.write(php())
     install_sql = php('--install')
-    check_secret('database/docshub.sql (--install)', install_sql)
+    check_secret('database/install.sql (--install)', install_sql)
+    with open(os.path.join(ROOT, 'database', 'install.sql'), 'wb') as f:  # ให้ไฟล์ติดตั้งใน repo ตรงกับโครงสร้างล่าสุดเสมอ
+        f.write(install_sql)
 
     src_zip = os.path.join(SKILL, 'assets', 'docs-hub-source.zip')
     files = source_files()
@@ -67,8 +69,8 @@ def build():
             data = open(os.path.join(ROOT, rel), 'rb').read()
             check_secret(rel, data)
             z.writestr('docshub/' + rel, data)
-        # ไฟล์ติดตั้งที่สะอาด แทน database/docshub.sql ของเครื่อง (ซึ่งอาจเป็นไฟล์ export ที่มีผู้ใช้จริง)
-        z.writestr('docshub/database/docshub.sql', install_sql)
+        # ไฟล์ติดตั้งที่สะอาดล่าสุด (install.php ใช้ไฟล์นี้) · database/docshub.sql ของเครื่องไม่ถูกใส่ เพราะอาจเป็นไฟล์ export ที่มีผู้ใช้จริง
+        z.writestr('docshub/database/install.sql', install_sql)
     print('source zip: %d files, %.0f KB' % (len(files) + 1, os.path.getsize(src_zip) / 1024))
 
     skill_zip = os.path.join(SKILLS, 'docs-hub-skill.zip')

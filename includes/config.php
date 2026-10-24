@@ -5,7 +5,7 @@
  */
 
 // ข้อมูลระบบ
-define('APP_VERSION', '1.23.1');
+define('APP_VERSION', '1.23.2');
 define('APP_DEVELOPER', 'ครูสมควร สากำ');
 define('APP_DEVELOPER_DEPT', 'แผนกวิชาเทคโนโลยีธุรกิจดิจิทัล');
 
