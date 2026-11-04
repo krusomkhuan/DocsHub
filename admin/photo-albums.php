@@ -229,7 +229,7 @@ require __DIR__ . '/../includes/admin_header.php';
         <td><?= e($a['title']) ?><div class="small text-muted"><?= $a['event_date'] ? thai_date($a['event_date']) . ' · ' : '' ?><?= $a['academic_year'] ? 'ปี ' . e($a['academic_year']) . ' · ' : '' ?><?= e($a['dept_name']) ?></div></td>
         <td class="small text-break" style="max-width:280px"><a href="<?= url('photo-albums.php?go=' . $a['id']) ?>" target="_blank" rel="noopener"><i class="bi <?= $icon ?> me-1"></i><?= e($a['url']) ?></a></td>
         <td><?= status_badge($a['status']) ?><?= $a['status'] === 'rejected' && $a['reject_reason'] ? '<div class="small text-muted">' . e($a['reject_reason']) . '</div>' : '' ?></td>
-        <td class="small"><?= e($a['submitter']) ?><div class="text-muted"><?= thai_date($a['created_at']) ?></div></td>
+        <td class="small"><?= $a['submitter'] !== null ? e($a['submitter']) : '<span class="text-muted">ไม่ระบุชื่อ</span>' ?><div class="text-muted"><?= thai_date($a['created_at']) ?></div></td>
         <td class="text-end small"><?= number_format($a['clicks']) ?></td>
         <td class="text-end"><a class="btn btn-sm btn-outline-secondary" href="<?= url('photo-album-form.php?id=' . $a['id'] . '&back=admin') ?>"><i class="bi bi-pencil"></i></a></td>
       </tr>

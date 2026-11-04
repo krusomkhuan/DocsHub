@@ -1,10 +1,10 @@
 <?php
-/** ส่ง/แก้ไขลิงก์อัลบั้มรูปภาพ: สมาชิกส่งแล้วรออนุมัติ เจ้าหน้าที่บันทึกแล้วเผยแพร่ทันที */
+/** เพิ่ม/แก้ไขลิงก์อัลบั้มรูปภาพ: ทุกคนส่งได้โดยไม่ต้องเป็นสมาชิก (รออนุมัติ) เจ้าหน้าที่บันทึกแล้วเผยแพร่ทันที · การแก้ไขต้องเข้าสู่ระบบ */
 require_once __DIR__ . '/includes/bootstrap.php';
-require_login();
 
 $album = null;
 if (get('id') !== '') {
+    require_login();
     $album = db_row('SELECT * FROM photo_albums WHERE id = ?', 'i', [(int)get('id')]);
     if (!$album || !album_can_edit($album)) {
         flash('danger', 'ไม่พบอัลบั้ม หรือคุณไม่มีสิทธิ์แก้ไข (อัลบั้มที่อนุมัติแล้วต้องให้เจ้าหน้าที่แก้ไข)');
@@ -12,11 +12,17 @@ if (get('id') !== '') {
     }
 }
 $staff = is_staff();
+$guest = !is_logged_in();
 $errors = [];
 $dup = null;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrf_check();
+    // ช่องดักบอต: ผู้ใช้จริงไม่เห็นช่องนี้ ถ้ามีค่าให้ตอบเหมือนสำเร็จแต่ไม่บันทึก
+    if ($guest && post('website') !== '') {
+        flash('success', 'ส่งลิงก์อัลบั้มแล้ว รอเจ้าหน้าที่ตรวจสอบก่อนเผยแพร่');
+        redirect('photo-albums.php');
+    }
     $data = [
         'title'         => mb_substr(post('title'), 0, 255),
         'url'           => trim(post('url')),
@@ -27,9 +33,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     ];
     if ($data['title'] === '') $errors[] = 'กรุณากรอกชื่ออัลบั้ม';
     if (!album_valid_url($data['url'])) $errors[] = 'ลิงก์ต้องขึ้นต้นด้วย https:// หรือ http:// เช่น https://photos.app.goo.gl/xxxx';
-    if ($data['event_date'] && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $data['event_date'])) $errors[] = 'วันที่ไม่ถูกต้อง';
-    if (!$errors && ($dup = album_duplicate($data['url'], (int)($album['id'] ?? 0))) && post('allow_dup') !== '1') {
-        $errors[] = 'ลิงก์นี้มีในคลังแล้ว: "' . $dup['title'] . '" — ถ้าต้องการบันทึกซ้ำ ให้ติ๊กยืนยันด้านล่าง';
+    if ($data['event_date'] && (!preg_match('/^(\d{4})-(\d{2})-(\d{2})$/', $data['event_date'], $dm) || !checkdate((int)$dm[2], (int)$dm[3], (int)$dm[1]))) $errors[] = 'วันที่ไม่ถูกต้อง';
+    if (!$errors && ($dup = album_duplicate($data['url'], (int)($album['id'] ?? 0)))) {
+        // ผู้ที่ไม่ได้เข้าสู่ระบบบันทึกลิงก์ซ้ำไม่ได้ และไม่แสดงชื่ออัลบั้มที่อาจยังรออนุมัติ
+        if ($guest) $errors[] = 'ลิงก์นี้มีในคลังแล้ว หรืออยู่ระหว่างรอเจ้าหน้าที่ตรวจสอบ';
+        elseif (post('allow_dup') !== '1') $errors[] = 'ลิงก์นี้มีในคลังแล้ว: "' . $dup['title'] . '" — ถ้าต้องการบันทึกซ้ำ ให้ติ๊กยืนยันด้านล่าง';
+    }
+    if (!$errors && $guest && album_guest_limit_reached()) {
+        $errors[] = 'มีการส่งลิงก์จากเครือข่ายนี้จำนวนมาก กรุณาลองใหม่ภายหลัง หรือเข้าสู่ระบบก่อนส่ง';
     }
 
     if (!$errors) {
@@ -42,7 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             log_activity('album_update', '#' . $id . ' ' . $data['title']);
         } else {
             $id = db_exec('INSERT INTO photo_albums (title, url, event_date, academic_year, department_id, description, status, approved_by, submitted_by) VALUES (?,?,?,?,?,?,?,?,?)',
-                'ssssissii', array_merge(array_values($data), [$status, $approver, current_user()['id']]));
+                'ssssissii', array_merge(array_values($data), [$status, $approver, current_user()['id'] ?? null]));
             log_activity('album_create', '#' . $id . ' ' . $data['title']);
         }
         flash('success', $status === 'approved' ? 'บันทึกและเผยแพร่อัลบั้มแล้ว' : 'ส่งลิงก์อัลบั้มแล้ว รอเจ้าหน้าที่ตรวจสอบก่อนเผยแพร่');
@@ -51,7 +62,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $v = fn($k, $def = '') => e($_SERVER['REQUEST_METHOD'] === 'POST' ? post($k, $def) : ($album[$k] ?? $def));
-$pageTitle = $album ? 'แก้ไขลิงก์อัลบั้ม' : 'ส่งลิงก์อัลบั้มรูปภาพ';
+$pageTitle = $album ? 'แก้ไขข้อมูลอัลบั้ม' : 'เพิ่มข้อมูลอัลบั้ม';
 $activeNav = 'albums';
 require __DIR__ . '/includes/header.php';
 ?>
@@ -68,11 +79,12 @@ require __DIR__ . '/includes/header.php';
         <?php foreach ($errors as $er): ?><div class="alert alert-danger py-2"><?= e($er) ?></div><?php endforeach; ?>
         <form method="post" class="row g-3">
           <?= csrf_field() ?><input type="hidden" name="back" value="<?= e(get('back', post('back'))) ?>">
+          <?php if ($guest): ?><div class="d-none" aria-hidden="true"><label>เว็บไซต์ (เว้นว่าง)<input type="text" name="website" tabindex="-1" autocomplete="off"></label></div><?php endif; ?>
           <div class="col-12"><label class="form-label">ชื่ออัลบั้ม / กิจกรรม *</label>
             <input class="form-control" name="title" required maxlength="255" value="<?= $v('title') ?>" placeholder="เช่น โครงการอบรมคุณธรรม จริยธรรม <?= current_year_be() ?>"></div>
           <div class="col-12"><label class="form-label">ลิงก์อัลบั้ม *</label>
             <input type="url" class="form-control" name="url" required maxlength="500" value="<?= $v('url') ?>" placeholder="https://photos.app.goo.gl/xxxxxxxx"></div>
-          <?php if ($dup): ?>
+          <?php if ($dup && !$guest): ?>
             <div class="col-12"><div class="form-check"><input class="form-check-input" type="checkbox" name="allow_dup" value="1" id="dup"><label class="form-check-label small" for="dup">ยืนยันบันทึกลิงก์ซ้ำ</label></div></div>
           <?php endif; ?>
           <div class="col-md-4"><label class="form-label">วันที่จัดกิจกรรม</label><input type="date" class="form-control" name="event_date" value="<?= $v('event_date') ?>"></div>

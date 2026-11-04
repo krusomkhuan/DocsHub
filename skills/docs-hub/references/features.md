@@ -25,7 +25,7 @@
 
 ## คลังรูปภาพ (`photo_albums`)
 - เก็บเฉพาะลิงก์ (http/https) ตรวจลิงก์ซ้ำ (`album_duplicate`) ระบุแหล่งที่มา (`album_source`) นับจำนวนครั้งที่เปิด
-- สมาชิกส่ง → pending → staff อนุมัติ/ไม่อนุมัติ (เหตุผล) · admin นำเข้า .xlsx/.csv/.tsv/.txt (≤10 MB, ≤5,000 แถว) ตรวจหัวคอลัมน์อัตโนมัติ รองรับ HYPERLINK, วันที่ Excel/พ.ศ., CSV UTF-8/Windows-874 → ตัวอย่าง → ยืนยัน
+- ทุกคนส่งได้ไม่ต้องเข้าสู่ระบบ (`submitted_by` = NULL, ช่องดักบอต `website`, ห้ามลิงก์ซ้ำ, `album_guest_limit_reached()` 20 ลิงก์/IP/ชั่วโมง) → pending → staff อนุมัติ/ไม่อนุมัติ (เหตุผล) · การแก้ไขต้องเข้าสู่ระบบ · admin นำเข้า .xlsx/.csv/.tsv/.txt (≤10 MB, ≤5,000 แถว) ตรวจหัวคอลัมน์อัตโนมัติ รองรับ HYPERLINK, วันที่ Excel/พ.ศ., CSV UTF-8/Windows-874 → ตัวอย่าง → ยืนยัน
 
 ## บัญชีรายรับ-รายจ่ายแผนก (`ledger_entries`, `ledger_categories`, `ledger_managers`)
 - เห็นเฉพาะครูที่ `users.department_id` = แผนกนั้น (รวม admin ก็ต้องสังกัด) · เมนู dropdown "บัญชีแผนก" + แถบเมนูย่อย `includes/ledger_nav.php` · ไม่มีแผนก → เมนูแสดงคำอธิบาย

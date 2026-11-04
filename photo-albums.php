@@ -79,11 +79,7 @@ require __DIR__ . '/includes/header.php';
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
   <div class="small text-muted"><?= $q !== '' || get('year') !== '' || get('dept') !== '' ? 'พบ ' . number_format($p['total']) . ' อัลบั้ม จากทั้งหมด ' . number_format($total) : 'ทั้งหมด ' . number_format($total) . ' อัลบั้ม' ?>
     <?= $q !== '' || get('year') !== '' || get('dept') !== '' ? ' · <a href="' . url('photo-albums.php') . '">ล้างการค้นหา</a>' : '' ?></div>
-  <?php if (is_logged_in()): ?>
-    <a class="btn btn-primary btn-sm" href="<?= url('photo-album-form.php') ?>"><i class="bi bi-link-45deg me-1"></i>ส่งลิงก์อัลบั้ม</a>
-  <?php else: ?>
-    <a class="btn btn-outline-primary btn-sm" href="<?= url('login.php?next=' . urlencode(url('photo-album-form.php'))) ?>"><i class="bi bi-box-arrow-in-right me-1"></i>เข้าสู่ระบบเพื่อส่งลิงก์</a>
-  <?php endif; ?>
+  <a class="btn btn-primary btn-sm" href="<?= url('photo-album-form.php') ?>"><i class="bi bi-plus-lg me-1"></i>เพิ่มข้อมูลอัลบั้ม</a>
 </div>
 
 <div class="table-responsive shadow-sm rounded-3 mb-3">
