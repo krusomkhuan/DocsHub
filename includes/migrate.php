@@ -4,9 +4,26 @@
  * เก็บเวอร์ชันโครงสร้างไว้ที่ settings.db_version ทำงานเฉพาะครั้งแรกที่ยังไม่ได้ปรับ
  */
 // เวอร์ชันโครงสร้างล่าสุด — เพิ่มทุกครั้งที่เพิ่มขั้นตอนด้านล่าง (ใช้ในหน้าตรวจสอบระบบ)
-if (!defined('DB_SCHEMA_LATEST')) define('DB_SCHEMA_LATEST', 13);
+if (!defined('DB_SCHEMA_LATEST')) define('DB_SCHEMA_LATEST', 14);
 
 $dbVersion = (int)(db_val("SELECT svalue FROM settings WHERE skey = 'db_version'") ?? 1);
+
+// v14: สถิติเข้าชมแบบสรุปรายวัน และสถานะออนไลน์ชั่วคราว (ไม่เก็บ IP)
+if ($dbVersion < 14) {
+    $db->query("CREATE TABLE IF NOT EXISTS traffic_daily (
+        visit_date DATE PRIMARY KEY,
+        visits BIGINT UNSIGNED NOT NULL DEFAULT 0,
+        pageviews BIGINT UNSIGNED NOT NULL DEFAULT 0
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+    $db->query("CREATE TABLE IF NOT EXISTS traffic_sessions (
+        visitor_hash CHAR(64) NOT NULL,
+        visit_date DATE NOT NULL,
+        user_id INT DEFAULT NULL,
+        last_seen DATETIME NOT NULL,
+        PRIMARY KEY (visitor_hash, visit_date),
+        KEY idx_traffic_seen (last_seen)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+}
 
 // v2: ตัวเลือกช่องข้อมูลของแต่ละประเภทเอกสาร (รองรับการเพิ่มประเภทใหม่)
 if ($dbVersion < 2) {
@@ -258,4 +275,8 @@ if ($dbVersion < 13) {
     $db->query("INSERT IGNORE INTO settings (skey, svalue) VALUES ('storage_driver', 'local'), ('gdrive_folder_id', ''), ('gdrive_folder_name', ''),
                 ('gdrive_refresh_token', ''), ('gdrive_account_email', ''), ('gdrive_access_token', ''), ('gdrive_token_exp', '0')");
     $db->query("INSERT INTO settings (skey, svalue) VALUES ('db_version', '13') ON DUPLICATE KEY UPDATE svalue = '13'");
+}
+
+if ($dbVersion < 14) {
+    $db->query("INSERT INTO settings (skey, svalue) VALUES ('db_version', '14') ON DUPLICATE KEY UPDATE svalue = '14'");
 }
