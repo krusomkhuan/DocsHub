@@ -75,6 +75,8 @@ $fYear = (int)get('year') ?: current_year_be();
 $where = 'b.year_be = ?';
 $types = 'i';
 $params = [$fYear];
+// สมาชิกที่ยังไม่ระบุแผนก ไม่เห็นทะเบียนของแผนกใด (ไม่ใช่เห็นทุกแผนก)
+if (!$staff && !$fDept) $where .= ' AND 1 = 0';
 if ($fDept) { $where .= ' AND b.department_id = ?'; $types .= 'i'; $params[] = $fDept; }
 if (isset($kinds[get('kind')])) { $where .= ' AND b.book_kind = ?'; $types .= 's'; $params[] = get('kind'); }
 if (get('q') !== '') {

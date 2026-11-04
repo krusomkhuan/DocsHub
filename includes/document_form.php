@@ -40,8 +40,11 @@ function save_document_form(?array $doc): array
 
     $hasFile = isset($_FILES['file']) && $_FILES['file']['error'] !== UPLOAD_ERR_NO_FILE;
     if (!$doc && !$hasFile) $errors[] = 'กรุณาเลือกไฟล์เอกสาร';
-    $wantNumber = $type && $type['has_order_no'] && post('auto_number') === '1' && !$data['doc_no'];
+    // ออกเลขเฉพาะตอนเพิ่มเอกสารใหม่ (ตรงกับฟอร์มที่แสดงตัวเลือกนี้เฉพาะเอกสารใหม่)
+    $wantNumber = !$doc && $type && $type['has_order_no'] && post('auto_number') === '1' && !$data['doc_no'];
     if ($wantNumber && !$data['department_id']) $errors[] = 'กรุณาเลือกแผนกวิชา/ฝ่ายเพื่อออกเลขคำสั่ง';
+    // สมาชิกออกเลขได้เฉพาะแผนกของตนเอง (กฎเดียวกับหน้าออกเลขหนังสือ) · เจ้าหน้าที่ออกเลขได้ทุกแผนก
+    elseif ($wantNumber && !$staff && $data['department_id'] !== (int)(current_user()['department_id'] ?? 0)) $errors[] = 'คุณออกเลขคำสั่งได้เฉพาะแผนกของตนเอง กรุณาเลือกแผนกของคุณ หรือไม่ติ๊กออกเลขอัตโนมัติ';
     if ($errors) return [null, $errors];
 
     $fileInfo = null;
