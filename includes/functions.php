@@ -527,6 +527,22 @@ function save_avatar(array $file, int $userId): string
     if (!$info || !in_array($info[2], [IMAGETYPE_JPEG, IMAGETYPE_PNG, IMAGETYPE_WEBP], true)) {
         throw new RuntimeException('ภาพโปรไฟล์ต้องเป็นไฟล์ JPG, PNG หรือ WEBP');
     }
+    $dir = UPLOAD_DIR . '/avatars';
+    if (!is_dir($dir) && !mkdir($dir, 0775, true)) {
+        throw new RuntimeException('ไม่สามารถสร้างโฟลเดอร์จัดเก็บภาพได้');
+    }
+    // เซิร์ฟเวอร์ไม่มีส่วนขยาย GD: เก็บไฟล์ต้นฉบับ (ผ่านการตรวจชนิดแล้ว) โดยไม่ย่อ/ครอป
+    if (!function_exists('imagecreatetruecolor')) {
+        if ($file['size'] > 2 * 1024 * 1024) {
+            throw new RuntimeException('เซิร์ฟเวอร์ไม่รองรับการย่อภาพ (ไม่มี GD) ภาพโปรไฟล์ต้องมีขนาดไม่เกิน 2 MB');
+        }
+        $ext  = [IMAGETYPE_JPEG => 'jpg', IMAGETYPE_PNG => 'png', IMAGETYPE_WEBP => 'webp'][$info[2]];
+        $name = 'avatars/u' . $userId . '_' . bin2hex(random_bytes(5)) . '.' . $ext;
+        if (!move_uploaded_file($file['tmp_name'], UPLOAD_DIR . '/' . $name)) {
+            throw new RuntimeException('บันทึกภาพโปรไฟล์ไม่สำเร็จ');
+        }
+        return $name;
+    }
     $src = match ($info[2]) {
         IMAGETYPE_JPEG => @imagecreatefromjpeg($file['tmp_name']),
         IMAGETYPE_PNG  => @imagecreatefrompng($file['tmp_name']),
@@ -546,10 +562,6 @@ function save_avatar(array $file, int $userId): string
     imagefill($out, 0, 0, imagecolorallocate($out, 255, 255, 255));
     imagecopyresampled($out, $src, 0, 0, (int)(($w - $side) / 2), (int)(($h - $side) / 2), 320, 320, $side, $side);
 
-    $dir = UPLOAD_DIR . '/avatars';
-    if (!is_dir($dir) && !mkdir($dir, 0775, true)) {
-        throw new RuntimeException('ไม่สามารถสร้างโฟลเดอร์จัดเก็บภาพได้');
-    }
     $name = 'avatars/u' . $userId . '_' . bin2hex(random_bytes(5)) . '.jpg';
     imagejpeg($out, UPLOAD_DIR . '/' . $name, 85);
     return $name; // ภาพโปรไฟล์เก็บในเครื่องเสมอ (uploads/docs/avatars) ไม่ส่งขึ้น Google Drive
