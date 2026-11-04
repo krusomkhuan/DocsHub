@@ -8,6 +8,8 @@ $u = current_user();
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/png" href="<?= url('assets/images/docs-hub-icon.png') ?>">
+  <link rel="apple-touch-icon" href="<?= url('assets/images/docs-hub-icon.png') ?>">
   <title><?= e(($pageTitle ? $pageTitle . ' | ' : '') . setting('site_name', 'Docs Hub')) ?></title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600&family=Sarabun:wght@400;500;700&display=swap" rel="stylesheet">
@@ -19,7 +21,7 @@ $u = current_user();
 <nav class="navbar navbar-expand-lg navbar-dark bg-hub sticky-top shadow-sm">
   <div class="container">
     <a class="navbar-brand d-flex align-items-center gap-2" href="<?= url('index.php') ?>">
-      <span class="brand-logo"><i class="bi bi-folder2-open"></i></span>
+      <img class="brand-logo" src="<?= url('assets/images/docs-hub-icon.png') ?>" width="40" height="40" alt="">
       <span>
         <span class="fw-semibold"><?= e(setting('site_name', 'Docs Hub')) ?></span>
         <small class="d-block brand-sub"><?= e(setting('college_name')) ?></small>

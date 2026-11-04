@@ -29,6 +29,8 @@ $menu = [
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/png" href="<?= url('assets/images/docs-hub-icon.png') ?>">
+  <link rel="apple-touch-icon" href="<?= url('assets/images/docs-hub-icon.png') ?>">
   <title><?= e($pageTitle) ?> | หลังบ้าน <?= e(setting('site_name')) ?></title>
   <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600&family=Sarabun:wght@400;500;700&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -39,7 +41,7 @@ $menu = [
 <div class="d-lg-flex">
   <aside class="admin-sidebar p-3">
     <a href="<?= url('admin/index.php') ?>" class="d-flex align-items-center gap-2 text-white text-decoration-none mb-3">
-      <span class="brand-logo"><i class="bi bi-folder2-open"></i></span>
+      <img class="brand-logo" src="<?= url('assets/images/docs-hub-icon.png') ?>" width="40" height="40" alt="">
       <span><span class="fw-semibold d-block" style="font-family:Prompt"><?= e(setting('site_name')) ?></span><small class="opacity-75">ระบบหลังบ้าน · v<?= e(APP_VERSION) ?></small></span>
     </a>
     <button class="btn btn-sm btn-outline-light d-lg-none w-100 mb-2" data-bs-toggle="collapse" data-bs-target="#adminMenu">เมนู</button>

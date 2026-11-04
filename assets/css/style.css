@@ -14,10 +14,10 @@ h1, h2, h3, h4, h5, .navbar-brand, .btn, .nav-link, .card-title {
 }
 .bg-hub { background: linear-gradient(90deg, var(--hub-primary), var(--hub-primary-2)); }
 .brand-logo {
-  width: 40px; height: 40px; border-radius: 10px; display: inline-flex;
-  align-items: center; justify-content: center; background: var(--hub-accent);
-  color: #1f2937; font-size: 1.3rem;
+  width: 40px; height: 40px; display: inline-block;
+  object-fit: contain; flex-shrink: 0; vertical-align: middle;
 }
+.brand-logo-lg { width: 56px; height: 56px; }
 .brand-sub { font-size: .72rem; opacity: .8; line-height: 1; }
 
 .hero {

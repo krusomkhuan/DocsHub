@@ -47,7 +47,7 @@ require __DIR__ . '/includes/header.php';
     <div class="card shadow-sm">
       <div class="card-body p-4">
         <div class="text-center mb-4">
-          <span class="brand-logo mb-2" style="width:56px;height:56px;font-size:1.8rem"><i class="bi bi-folder2-open"></i></span>
+          <img class="brand-logo brand-logo-lg mb-2" src="<?= url('assets/images/docs-hub-icon.png') ?>" width="56" height="56" alt="โลโก้ Docs Hub">
           <h4 class="mb-0">เข้าสู่ระบบ</h4>
           <small class="text-muted"><?= e(setting('site_name')) ?> · <?= e(setting('site_slogan')) ?></small>
         </div>
