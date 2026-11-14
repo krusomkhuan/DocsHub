@@ -8,6 +8,7 @@
 $staff = is_staff();
 $u = current_user();
 $kinds = book_kinds();
+$issueKinds = book_issue_kinds();
 
 $allowedDepts = $staff ? departments() : array_filter(departments(), fn($d) => (int)$d['id'] === (int)$u['department_id']);
 
@@ -22,13 +23,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $date    = post('book_date') ?: date('Y-m-d');
         $subject = mb_substr(post('subject'), 0, 255);
         if (!isset($allowedDepts[$deptId])) $errors[] = 'คุณไม่มีสิทธิ์ออกเลขของแผนกนี้';
-        if (!isset($kinds[$kind])) $errors[] = 'กรุณาเลือกประเภทหนังสือ';
+        if (!isset($issueKinds[$kind])) $errors[] = 'กรุณาเลือกประเภทหนังสือ';
         if ($subject === '') $errors[] = 'กรุณากรอกเรื่อง';
         if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) $errors[] = 'วันที่ไม่ถูกต้อง';
+        $fixedNo = null;
+        if (post('backdate') && trim(post('running_no')) !== '') {
+            if (!ctype_digit(trim(post('running_no')))) $errors[] = 'เลขที่ย้อนหลังต้องเป็นตัวเลข';
+            else $fixedNo = (int)post('running_no');
+        }
         if (!$errors) {
-            $issued = issue_book_number($deptId, $kind, $date, $subject, mb_substr(post('to_whom'), 0, 255), mb_substr(post('note'), 0, 255));
-            $_SESSION['last_issued'] = $issued['id'];
-            redirect($selfUrl . '?issued=' . $issued['id']);
+            try {
+                $issued = issue_book_number($deptId, $kind, $date, $subject, mb_substr(post('to_whom'), 0, 255), mb_substr(post('note'), 0, 255), null, $fixedNo);
+                $_SESSION['last_issued'] = $issued['id'];
+                redirect($selfUrl . '?issued=' . $issued['id']);
+            } catch (RuntimeException $ex) {
+                $errors[] = $ex->getMessage();
+            }
         }
     } elseif ($action === 'cancel' && $staff) {
         $bn = db_row('SELECT * FROM book_numbers WHERE id = ?', 'i', [(int)post('id')]);
@@ -44,7 +54,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $kind = post('book_kind');
         $yearBe = (int)post('year_be');
         $start = (int)post('start_no');
-        if (!isset(departments()[$deptId]) || !isset($kinds[$kind]) || $yearBe < 2500 || $yearBe > 2700 || $start < 1 || $start > 99999) {
+        if (!isset(departments()[$deptId]) || !isset($issueKinds[$kind]) || $yearBe < 2500 || $yearBe > 2700 || $start < 1 || $start > 99999) {
             flash('danger', 'ข้อมูลเลขเริ่มต้นไม่ถูกต้อง (เลขเริ่มต้นต้องอยู่ระหว่าง 1–99999)');
         } else {
             db_exec('INSERT INTO book_number_starts (department_id, book_kind, year_be, start_no, set_by) VALUES (?,?,?,?,?)
@@ -147,7 +157,7 @@ $starts = $staff ? db_all('SELECT s.*, d.name AS dept_name, d.code, u.fullname A
             <div class="col-6">
               <label class="form-label small">ประเภท</label>
               <select class="form-select" name="book_kind">
-                <?php foreach ($kinds as $k => $lbl): ?><option value="<?= $k ?>"<?= post('book_kind') === $k ? ' selected' : '' ?>><?= $lbl ?></option><?php endforeach; ?>
+                <?php foreach ($issueKinds as $k => $lbl): ?><option value="<?= $k ?>"<?= post('book_kind') === $k ? ' selected' : '' ?>><?= $lbl ?></option><?php endforeach; ?>
               </select>
             </div>
             <div class="col-6">
@@ -159,6 +169,50 @@ $starts = $staff ? db_all('SELECT s.*, d.name AS dept_name, d.code, u.fullname A
           <div class="mb-2"><label class="form-label small">เรียน / ถึง</label><input class="form-control" name="to_whom" maxlength="255" list="toWhomList" autocomplete="off" value="<?= e(post('to_whom')) ?>">
             <datalist id="toWhomList"><option value="ผู้อำนวยการ"><option value="ประธาน อวท."></datalist></div>
           <div class="mb-3"><label class="form-label small">หมายเหตุ</label><input class="form-control" name="note" maxlength="255" value="<?= e(post('note')) ?>"></div>
+          <?php
+            // เลขที่ข้ามไปของแต่ละแผนก (ปีปัจจุบัน) ไว้แนะนำตอนลงเลขย้อนหลัง
+            $skipped = [];
+            foreach ($allowedDepts as $dp) {
+                foreach (array_keys($issueKinds) as $k) $skipped[$dp['id'] . '-' . $k] = book_skipped_numbers((int)$dp['id'], $k, current_year_be());
+            }
+          ?>
+          <div class="border rounded p-2 mb-3 bg-light">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" name="backdate" value="1" id="backdateChk"<?= post('backdate') ? ' checked' : '' ?>>
+              <label class="form-check-label small" for="backdateChk">ลงเลขย้อนหลัง (กรณีลืมลงทะเบียน)</label>
+            </div>
+            <div id="backdateBox" class="mt-2"<?= post('backdate') ? '' : ' hidden' ?>>
+              <label class="form-label small mb-1">เลขที่ที่ต้องการลง</label>
+              <input type="number" class="form-control form-control-sm" name="running_no" id="backdateNo" min="1" max="99999" value="<?= e(post('running_no')) ?>" placeholder="เช่น 91">
+              <div class="form-text" id="backdateHint"></div>
+              <div class="form-text">ลงได้เฉพาะเลขที่ยังว่างและน้อยกว่าเลขถัดไป · อย่าลืมแก้ "ลงวันที่" ให้ตรงกับวันที่จริงของหนังสือ</div>
+            </div>
+          </div>
+          <script>
+          (function () {
+            var skipped = <?= json_encode($skipped) ?>;
+            var f = document.currentScript.closest('form');
+            var chk = f.querySelector('#backdateChk'), box = f.querySelector('#backdateBox'), no = f.querySelector('#backdateNo'), hint = f.querySelector('#backdateHint');
+            function refresh() {
+              box.hidden = !chk.checked;
+              if (!chk.checked) no.value = '';
+              var list = skipped[f.department_id.value + '-' + f.book_kind.value] || [];
+              hint.innerHTML = '';
+              if (!list.length) { hint.textContent = 'ปีนี้ยังไม่มีเลขที่ข้ามไป'; return; }
+              hint.append('เลขที่ยังว่าง: ');
+              list.forEach(function (n) {
+                var a = document.createElement('a');
+                a.href = '#'; a.className = 'me-2'; a.textContent = String(n).padStart(3, '0');
+                a.onclick = function (ev) { ev.preventDefault(); no.value = n; };
+                hint.append(a);
+              });
+            }
+            chk.addEventListener('change', refresh);
+            f.department_id.addEventListener('change', refresh);
+            f.book_kind.addEventListener('change', refresh);
+            refresh();
+          })();
+          </script>
           <button class="btn btn-primary w-100"><i class="bi bi-123 me-1"></i>ออกเลข</button>
         </form>
         <?php endif; ?>
@@ -179,7 +233,7 @@ $starts = $staff ? db_all('SELECT s.*, d.name AS dept_name, d.code, u.fullname A
           </div>
           <div class="col-6">
             <select class="form-select form-select-sm" name="book_kind">
-              <?php foreach ($kinds as $k => $lbl): ?><option value="<?= $k ?>"><?= $lbl ?></option><?php endforeach; ?>
+              <?php foreach ($issueKinds as $k => $lbl): ?><option value="<?= $k ?>"><?= $lbl ?></option><?php endforeach; ?>
             </select>
           </div>
           <div class="col-6"><input type="number" class="form-control form-control-sm" name="year_be" min="2500" max="2700" value="<?= $fYear ?>" title="ปี พ.ศ." required></div>

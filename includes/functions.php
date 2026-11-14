@@ -380,6 +380,12 @@ function book_kinds(): array
     return ['out' => 'หนังสือส่ง', 'in' => 'หนังสือรับ', 'memo' => 'บันทึกข้อความ', 'order' => 'คำสั่ง'];
 }
 
+/** ประเภทที่เปิดให้ออกเลขใหม่/ตั้งเลขเริ่มต้นได้ (ประเภทอื่นยังใช้แสดงผลข้อมูลเดิม) */
+function book_issue_kinds(): array
+{
+    return array_intersect_key(book_kinds(), ['memo' => 1]);
+}
+
 /** เลขเริ่มต้นที่กำหนดไว้ของแผนก/ประเภท/ปี (1 ถ้าไม่ได้กำหนด) */
 function book_start_number(int $deptId, string $kind, int $yearBe): int
 {
@@ -394,10 +400,24 @@ function book_next_number(int $deptId, string $kind, int $yearBe): int
 }
 
 /**
+ * เลขที่ข้ามไป (ยังว่าง) ซึ่งน้อยกว่าเลขถัดไป ใช้ลงเลขย้อนหลังกรณีลืม
+ * นับตั้งแต่เลขแรกที่ออกในระบบของแผนก/ประเภท/ปี จนถึงเลขถัดไป - 1
+ */
+function book_skipped_numbers(int $deptId, string $kind, int $yearBe, int $limit = 50): array
+{
+    $used = array_map('intval', array_column(db_all('SELECT running_no FROM book_numbers WHERE department_id = ? AND book_kind = ? AND year_be = ?', 'isi', [$deptId, $kind, $yearBe]), 'running_no'));
+    if (!$used) return [];
+    $next = book_next_number($deptId, $kind, $yearBe);
+    $free = array_values(array_diff(range(min($used), $next - 1), $used));
+    return array_slice(array_reverse($free), 0, $limit);
+}
+
+/**
  * ออกเลขหนังสือถัดไปของแผนก/ประเภท/ปี แบบปลอดภัยเมื่อมีผู้ขอพร้อมกัน (row lock ใน transaction)
+ * $fixedNo: ลงเลขย้อนหลัง (กรณีลืม) ใช้ได้เฉพาะเลขที่ยังว่างและน้อยกว่าเลขถัดไป
  * คืนค่า array ของแถวที่สร้าง
  */
-function issue_book_number(int $deptId, string $kind, string $date, string $subject, string $toWhom = '', string $note = '', ?int $documentId = null): array
+function issue_book_number(int $deptId, string $kind, string $date, string $subject, string $toWhom = '', string $note = '', ?int $documentId = null, ?int $fixedNo = null): array
 {
     global $db;
     if (!isset(book_kinds()[$kind])) {
@@ -414,12 +434,25 @@ function issue_book_number(int $deptId, string $kind, string $date, string $subj
         // ล็อกแถวของแผนกเพื่อเรียงคิวการออกเลข
         db_query('SELECT id FROM departments WHERE id = ? FOR UPDATE', 'i', [$deptId]);
         $next = book_next_number($deptId, $kind, $yearBe);
+        if ($fixedNo !== null) {
+            if ($fixedNo < 1 || $fixedNo >= $next) {
+                throw new RuntimeException('ลงเลขย้อนหลังได้เฉพาะเลขที่น้อยกว่าเลขถัดไป (' . $next . ') ถ้าต้องการเลขใหม่ให้เว้นช่องเลขที่ว่างไว้');
+            }
+            if (db_val('SELECT id FROM book_numbers WHERE department_id = ? AND book_kind = ? AND year_be = ? AND running_no = ?', 'isii', [$deptId, $kind, $yearBe, $fixedNo])) {
+                throw new RuntimeException('เลขที่ ' . str_pad((string)$fixedNo, 3, '0', STR_PAD_LEFT) . '/' . $yearBe . ' ถูกใช้ไปแล้ว');
+            }
+            $next = $fixedNo;
+        }
         $fullNo = strtr(setting('book_format', '{code} {no}/{year}'), [
             '{prefix}' => setting('book_prefix'),
             '{code}'   => $dept['code'],
             '{no}'     => str_pad((string)$next, 3, '0', STR_PAD_LEFT),
             '{year}'   => (string)$yearBe,
         ]);
+        // กันเลขซ้ำอีกชั้น: ข้อความเลขที่ต้องไม่ซ้ำกับแถวเดิม (เช่น แถวที่เคยแก้เลขที่ด้วยมือ แต่เลขลำดับไม่ตรง)
+        if (db_val('SELECT id FROM book_numbers WHERE department_id = ? AND book_kind = ? AND full_no = ?', 'iss', [$deptId, $kind, $fullNo])) {
+            throw new RuntimeException('เลขที่ ' . $fullNo . ' มีอยู่ในทะเบียนแล้ว');
+        }
         $uid = current_user()['id'] ?? null;
         $id = db_exec('INSERT INTO book_numbers (department_id, book_kind, year_be, running_no, full_no, book_date, subject, to_whom, note, document_id, created_by)
                        VALUES (?,?,?,?,?,?,?,?,?,?,?)', 'isiisssssii',
@@ -429,7 +462,7 @@ function issue_book_number(int $deptId, string $kind, string $date, string $subj
         $db->rollback();
         throw $ex;
     }
-    log_activity('book_number', $fullNo . ' ' . $subject);
+    log_activity('book_number', $fullNo . ($fixedNo !== null ? ' (ลงย้อนหลัง)' : '') . ' ' . $subject);
     return db_row('SELECT * FROM book_numbers WHERE id = ?', 'i', [$id]);
 }
 
