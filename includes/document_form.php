@@ -40,11 +40,6 @@ function save_document_form(?array $doc): array
 
     $hasFile = isset($_FILES['file']) && $_FILES['file']['error'] !== UPLOAD_ERR_NO_FILE;
     if (!$doc && !$hasFile) $errors[] = 'กรุณาเลือกไฟล์เอกสาร';
-    // ออกเลขเฉพาะตอนเพิ่มเอกสารใหม่ (ตรงกับฟอร์มที่แสดงตัวเลือกนี้เฉพาะเอกสารใหม่)
-    $wantNumber = !$doc && $type && $type['has_order_no'] && post('auto_number') === '1' && !$data['doc_no'];
-    if ($wantNumber && !$data['department_id']) $errors[] = 'กรุณาเลือกแผนกวิชา/ฝ่ายเพื่อออกเลขคำสั่ง';
-    // สมาชิกออกเลขได้เฉพาะแผนกของตนเอง (กฎเดียวกับหน้าออกเลขหนังสือ) · เจ้าหน้าที่ออกเลขได้ทุกแผนก
-    elseif ($wantNumber && !$staff && $data['department_id'] !== (int)(current_user()['department_id'] ?? 0)) $errors[] = 'คุณออกเลขคำสั่งได้เฉพาะแผนกของตนเอง กรุณาเลือกแผนกของคุณ หรือไม่ติ๊กออกเลขอัตโนมัติ';
     if ($errors) return [null, $errors];
 
     $fileInfo = null;
@@ -79,13 +74,6 @@ function save_document_form(?array $doc): array
         $id = db_exec('INSERT INTO documents (' . implode(',', $cols) . ") VALUES ($ph)", $typesStr, $vals);
         log_activity('doc_create', '#' . $id . ' ' . $data['title']);
     }
-
-    // ออกเลขคำสั่งอัตโนมัติจากทะเบียนเลขหนังสือของแผนก
-    if ($wantNumber) {
-        $bn = issue_book_number($data['department_id'], 'order', $data['doc_date'] ?: date('Y-m-d'), $data['title'], '', 'ออกจากการอัปโหลดคำสั่ง', $id);
-        db_exec('UPDATE documents SET doc_no = ? WHERE id = ?', 'si', [$bn['full_no'], $id]);
-        flash('info', 'ออกเลขคำสั่ง: ' . $bn['full_no']);
-    }
     return [$id, []];
 }
 
@@ -107,7 +95,7 @@ function render_document_form(?array $doc, array $errors, string $cancelUrl): vo
         <select class="form-select" name="type_id" required data-type-select>
           <option value="">— เลือก —</option>
           <?php foreach (doc_types() as $t): ?>
-            <option value="<?= $t['id'] ?>" data-flags="<?= trim(($t['has_subject'] ? 'subject ' : '') . ($t['has_semester'] ? 'semester ' : '') . ($t['has_order_no'] ? 'order' : '')) ?>" data-owner-label="<?= e($t['owner_label']) ?>"<?= $typeSel === (string)$t['id'] ? ' selected' : '' ?>><?= e($t['name']) ?></option>
+            <option value="<?= $t['id'] ?>" data-flags="<?= trim(($t['has_subject'] ? 'subject ' : '') . ($t['has_semester'] ? 'semester' : '')) ?>" data-owner-label="<?= e($t['owner_label']) ?>"<?= $typeSel === (string)$t['id'] ? ' selected' : '' ?>><?= e($t['name']) ?></option>
           <?php endforeach; ?>
         </select>
       </div>
@@ -136,14 +124,6 @@ function render_document_form(?array $doc, array $errors, string $cancelUrl): vo
         <label class="form-label">ลงวันที่</label>
         <input type="date" class="form-control" name="doc_date" value="<?= $v('doc_date') ?>">
       </div>
-      <?php if (!$doc): ?>
-      <div class="col-12" data-show-for="order">
-        <div class="form-check">
-          <input class="form-check-input" type="checkbox" name="auto_number" value="1" id="autoNo"<?= post('auto_number') === '1' ? ' checked' : '' ?>>
-          <label class="form-check-label" for="autoNo">ออกเลขคำสั่งอัตโนมัติจากทะเบียนของแผนก (เมื่อไม่ได้กรอกเลขที่)</label>
-        </div>
-      </div>
-      <?php endif; ?>
       <div class="col-md-3" data-show-for="subject">
         <label class="form-label">รหัสวิชา</label>
         <input class="form-control" name="subject_code" maxlength="30" value="<?= $v('subject_code') ?>">

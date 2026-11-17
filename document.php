@@ -24,7 +24,6 @@ if (!can_view_document($d)) {
 }
 
 db_exec('UPDATE documents SET views = views + 1 WHERE id = ?', 'i', [$d['id']]);
-$books = db_all('SELECT full_no, subject FROM book_numbers WHERE document_id = ?', 'i', [$d['id']]);
 
 // รายงานการไปราชการของคำสั่งนี้
 $allowTrip = doc_allows_trip_report($d);
@@ -157,9 +156,6 @@ $isPreviewable = in_array($d['file_ext'], ['pdf', 'jpg', 'jpeg', 'png'], true);
       <ul class="list-group list-group-flush small">
         <?php foreach ($fields as $label => $val): if ($val === '' || $val === null) continue; ?>
           <li class="list-group-item d-flex justify-content-between gap-3"><span class="text-muted text-nowrap"><?= e($label) ?></span><span class="text-end"><?= $val ?></span></li>
-        <?php endforeach; ?>
-        <?php foreach ($books as $b): ?>
-          <li class="list-group-item d-flex justify-content-between gap-3"><span class="text-muted">เลขหนังสือ</span><span class="text-end"><?= e($b['full_no']) ?></span></li>
         <?php endforeach; ?>
       </ul>
     </div>

@@ -118,7 +118,7 @@ require __DIR__ . '/../includes/admin_header.php';
       <div class="card-header bg-white fw-semibold"><i class="bi bi-cloud-arrow-down me-1"></i>สร้างไฟล์สำรอง</div>
       <div class="card-body">
         <ul class="small text-muted ps-3">
-          <li>ฐานข้อมูล: เอกสาร สมาชิก เลขหนังสือ หมวดหมู่ ตั้งค่า</li>
+          <li>ฐานข้อมูล: เอกสาร สมาชิก PLC บัญชีแผนก หมวดหมู่ ตั้งค่า</li>
           <li>ไฟล์เอกสาร: <?= number_format($uploadsCount) ?> ไฟล์ · <?= format_size($uploadsSize) ?></li>
           <?php if (storage_drive_enabled() || setting('gdrive_refresh_token') !== ''): ?>
             <li class="text-warning-emphasis">ไฟล์ที่เก็บใน Google Drive ไม่รวมในไฟล์สำรอง (สำรองด้วย Google Drive / Google Takeout) · ไฟล์สำรองมีค่าการเชื่อมต่อ Drive จึงควรเก็บไว้ในที่ปลอดภัย</li>
@@ -192,7 +192,7 @@ require __DIR__ . '/../includes/admin_header.php';
             <td class="small">
               <?php if ($m): ?>
                 v<?= e($m['version']) ?> · เอกสาร <?= number_format($m['tables']['documents'] ?? 0) ?> · สมาชิก <?= number_format($m['tables']['users'] ?? 0) ?>
-                · เลขหนังสือ <?= number_format($m['tables']['book_numbers'] ?? 0) ?><?= $m['type'] === 'full' ? ' · ไฟล์ ' . number_format($m['files']) : '' ?>
+<?= $m['type'] === 'full' ? ' · ไฟล์ ' . number_format($m['files']) : '' ?>
                 <div class="text-muted">โดย <?= e($m['created_by']) ?></div>
               <?php else: ?>
                 <span class="text-danger">ไฟล์เสียหายหรือไม่ใช่ไฟล์สำรอง</span>

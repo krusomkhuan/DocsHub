@@ -36,7 +36,7 @@
 })();
 </script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="<?= url('assets/js/app.js') ?>"></script>
+<script src="<?= url('assets/js/app.js') ?>?v=<?= e(APP_VERSION) ?>"></script>
 <script src="<?= url('assets/js/traffic.js') ?>"></script>
 </body>
 </html>

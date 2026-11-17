@@ -20,15 +20,15 @@ $byType = db_all("SELECT t.*, COUNT(d.id) AS total, SUM(d.status = 'pending') AS
 $stats = [
     ['เอกสารทั้งหมด', (int)db_val('SELECT COUNT(*) FROM documents'), 'bi-files', 'primary'],
     ['รออนุมัติ', (int)db_val("SELECT COUNT(*) FROM documents WHERE status = 'pending'"), 'bi-hourglass-split', 'warning'],
-    ['เลขหนังสือปี ' . current_year_be(), (int)db_val('SELECT COUNT(*) FROM book_numbers WHERE year_be = ? AND is_cancelled = 0', 'i', [current_year_be()]), 'bi-123', 'success'],
+    ['กลุ่ม PLC ปีการศึกษา ' . current_academic_year(), (int)db_val('SELECT COUNT(*) FROM plc_groups WHERE academic_year = ?', 'i', [current_academic_year()]), 'bi-people', 'success'],
     ['สมาชิก', (int)db_val("SELECT COUNT(*) FROM users WHERE status = 'active'"), 'bi-people', 'info'],
 ];
 $pending = db_all("SELECT d.id, d.title, d.created_at, t.name AS type_name, u.fullname FROM documents d
                    JOIN doc_types t ON t.id = d.type_id LEFT JOIN users u ON u.id = d.uploaded_by
                    WHERE d.status = 'pending' ORDER BY d.created_at LIMIT 8");
-$byDept = db_all('SELECT dp.name, COUNT(b.id) AS c FROM departments dp
-                  LEFT JOIN book_numbers b ON b.department_id = dp.id AND b.year_be = ? AND b.is_cancelled = 0
-                  GROUP BY dp.id ORDER BY c DESC, dp.sort_order LIMIT 8', 'i', [current_year_be()]);
+$byDept = db_all('SELECT dp.name, COUNT(d.id) AS c FROM departments dp
+                  LEFT JOIN documents d ON d.department_id = dp.id
+                  GROUP BY dp.id ORDER BY c DESC, dp.sort_order LIMIT 8');
 $maxDept = max(1, ...array_map(fn($r) => (int)$r['c'], $byDept ?: [['c' => 1]]));
 
 $pageTitle = 'แดชบอร์ด';
@@ -78,7 +78,7 @@ require __DIR__ . '/../includes/admin_header.php';
   </div>
   <div class="col-xl-5">
     <div class="card shadow-sm">
-      <div class="card-header bg-white fw-semibold">การออกเลขหนังสือ ปี <?= current_year_be() ?> (แยกตามแผนก)</div>
+      <div class="card-header bg-white fw-semibold">จำนวนเอกสาร (แยกตามแผนก)</div>
       <div class="card-body">
         <?php foreach ($byDept as $r): ?>
           <div class="mb-2">

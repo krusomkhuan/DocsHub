@@ -32,6 +32,7 @@ require_once __DIR__ . '/pdpa.php';
 require_once __DIR__ . '/photo_albums.php';
 require_once __DIR__ . '/google_auth.php';
 require_once __DIR__ . '/gdrive.php';
+require_once __DIR__ . '/plc.php';
 
 // โหลดข้อมูลผู้ใช้ล่าสุดทุกครั้ง เพื่อให้การระงับสิทธิ์มีผลทันที
 $CURRENT_USER = null;

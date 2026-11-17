@@ -21,8 +21,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             flash('success', 'เพิ่มแผนกแล้ว');
         }
     } elseif (post('action') === 'delete') {
-        if (db_val('SELECT COUNT(*) FROM book_numbers WHERE department_id = ?', 'i', [$id])) {
-            flash('danger', 'ไม่สามารถลบได้ เนื่องจากแผนกนี้มีทะเบียนเลขหนังสือแล้ว');
+        if (db_val('SELECT COUNT(*) FROM plc_groups WHERE department_id = ?', 'i', [$id])) {
+            flash('danger', 'ไม่สามารถลบได้ เนื่องจากแผนกนี้มีกลุ่ม PLC');
         } elseif (db_val('SELECT COUNT(*) FROM ledger_entries WHERE department_id = ?', 'i', [$id])) {
             flash('danger', 'ไม่สามารถลบได้ เนื่องจากแผนกนี้มีข้อมูลบัญชีรายรับ-รายจ่าย');
         } else {
@@ -35,7 +35,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 $rows = db_all('SELECT dp.*, (SELECT COUNT(*) FROM users u WHERE u.department_id = dp.id) AS users,
                        (SELECT COUNT(*) FROM documents d WHERE d.department_id = dp.id) AS docs,
-                       (SELECT COUNT(*) FROM book_numbers b WHERE b.department_id = dp.id) AS books
+                       (SELECT COUNT(*) FROM plc_groups g WHERE g.department_id = dp.id) AS plc
                 FROM departments dp ORDER BY dp.sort_order, dp.name');
 $edit = get('edit') ? db_row('SELECT * FROM departments WHERE id = ?', 'i', [(int)get('edit')]) : null;
 
@@ -49,7 +49,7 @@ require __DIR__ . '/../includes/admin_header.php';
       <div class="card-header bg-white fw-semibold"><?= $edit ? 'แก้ไขแผนก' : 'เพิ่มแผนก / ฝ่าย' ?></div>
       <form method="post" class="card-body">
         <?= csrf_field() ?><input type="hidden" name="action" value="save"><input type="hidden" name="id" value="<?= (int)($edit['id'] ?? 0) ?>">
-        <div class="mb-2"><label class="form-label">รหัสย่อ (ใช้ในเลขหนังสือ)</label><input class="form-control" name="code" required maxlength="30" value="<?= e($edit['code'] ?? '') ?>" placeholder="เช่น ชฟ"></div>
+        <div class="mb-2"><label class="form-label">รหัสย่อ</label><input class="form-control" name="code" required maxlength="30" value="<?= e($edit['code'] ?? '') ?>" placeholder="เช่น ชฟ"></div>
         <div class="mb-2"><label class="form-label">ชื่อแผนก / ฝ่าย</label><input class="form-control" name="name" required value="<?= e($edit['name'] ?? '') ?>"></div>
         <div class="mb-3"><label class="form-label">ลำดับ</label><input type="number" class="form-control" name="sort_order" value="<?= (int)($edit['sort_order'] ?? 0) ?>"></div>
         <button class="btn btn-primary">บันทึก</button>
@@ -60,7 +60,7 @@ require __DIR__ . '/../includes/admin_header.php';
   <div class="col-lg-8">
     <div class="card shadow-sm">
       <div class="table-responsive"><table class="table table-hover mb-0">
-        <thead class="table-light"><tr><th>รหัส</th><th>ชื่อ</th><th class="text-end">สมาชิก</th><th class="text-end">เอกสาร</th><th class="text-end">เลขหนังสือ</th><th></th></tr></thead>
+        <thead class="table-light"><tr><th>รหัส</th><th>ชื่อ</th><th class="text-end">สมาชิก</th><th class="text-end">เอกสาร</th><th class="text-end">กลุ่ม PLC</th><th></th></tr></thead>
         <tbody>
         <?php foreach ($rows as $r): ?>
           <tr>
@@ -68,7 +68,7 @@ require __DIR__ . '/../includes/admin_header.php';
             <td><?= e($r['name']) ?></td>
             <td class="text-end"><?= (int)$r['users'] ?></td>
             <td class="text-end"><?= (int)$r['docs'] ?></td>
-            <td class="text-end"><?= (int)$r['books'] ?></td>
+            <td class="text-end"><?= (int)$r['plc'] ?></td>
             <td class="text-end text-nowrap">
               <a class="btn btn-sm btn-outline-secondary" href="?edit=<?= $r['id'] ?>"><i class="bi bi-pencil"></i></a>
               <form method="post" class="d-inline" data-confirm="ลบ '<?= e($r['name']) ?>'?">

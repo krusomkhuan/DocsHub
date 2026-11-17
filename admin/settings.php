@@ -8,8 +8,6 @@ $fields = [
     'college_name'        => ['ชื่อสถานศึกษา', 'text'],
     'site_url'            => ['URL ของระบบ Docs Hub', 'url'],
     'college_url'         => ['URL เว็บไซต์วิทยาลัย', 'url'],
-    'book_prefix'         => ['รหัสหน่วยงาน (ใช้แทน {prefix})', 'text'],
-    'book_format'         => ['รูปแบบเลขหนังสือ', 'text'],
     'max_upload_mb'       => ['ขนาดไฟล์อัปโหลดสูงสุด (MB)', 'number'],
     'allow_register'      => ['เปิดรับสมัครสมาชิก', 'bool'],
     'auto_approve_member' => ['อนุมัติสมาชิกใหม่อัตโนมัติ', 'bool'],
@@ -163,8 +161,6 @@ $phpMax = ini_get('upload_max_filesize') . ' / post_max_size ' . ini_get('post_m
               <button type="button" class="btn btn-link btn-sm p-0 align-baseline" onclick="document.querySelector('[name=site_url]').value='<?= e(detected_base_url()) ?>'">ใช้ค่านี้</button></div>
           <?php elseif ($key === 'college_url'): ?>
             <div class="form-text">แสดงเป็นลิงก์ชื่อวิทยาลัยที่ท้ายเว็บ</div>
-          <?php elseif ($key === 'book_format'): ?>
-            <div class="form-text">ตัวแปร: <code>{prefix}</code> รหัสหน่วยงาน, <code>{code}</code> รหัสแผนก, <code>{no}</code> เลขรัน 3 หลัก, <code>{year}</code> ปี พ.ศ. — เช่น <code>{code} {no}/{year}</code> → ชฟ 001/<?= current_year_be() ?> หรือ <code>{prefix}({code})/{no}</code></div>
           <?php elseif ($key === 'max_upload_mb'): ?>
             <div class="form-text">ค่าจาก php.ini ปัจจุบัน: upload_max_filesize <?= e($phpMax) ?> (ต้องตั้งให้ไม่น้อยกว่าค่านี้)</div>
           <?php endif; ?>

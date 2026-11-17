@@ -11,7 +11,7 @@ $menu = [
     ['documents', 'documents.php', 'bi-files', 'จัดการเอกสาร', $pendingDocs, false],
     ['trip', 'trip-reports.php', 'bi-geo-alt', 'รายงานไปราชการ', 0, false],
     ['albums', 'photo-albums.php', 'bi-images', 'คลังรูปภาพ', $pendingAlbums, false],
-    ['book', 'book-numbers.php', 'bi-123', 'ทะเบียนเลขหนังสือ', 0, false],
+    ['plc', 'plc.php', 'bi-people', 'ระบบ PLC', 0, true],
     ['doctypes', 'doc-types.php', 'bi-grid', 'ประเภทเอกสาร', 0, true],
     ['categories', 'categories.php', 'bi-tags', 'หมวดหมู่เอกสาร', 0, false],
     ['departments', 'departments.php', 'bi-building', 'แผนกวิชา / ฝ่าย', 0, true],

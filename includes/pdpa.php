@@ -123,7 +123,11 @@ function pdpa_export_user(int $uid): array
         'requests'         => db_all('SELECT request_type, detail, status, response, created_at, handled_at FROM pdpa_requests WHERE user_id = ? ORDER BY id', 'i', [$uid]),
         'documents'        => db_all('SELECT id, title, doc_no, created_at FROM documents WHERE uploaded_by = ? ORDER BY id', 'i', [$uid]),
         'trip_reports'     => db_all('SELECT id, subject, place, start_date, end_date, created_at FROM trip_reports WHERE created_by = ? ORDER BY id', 'i', [$uid]),
-        'book_numbers'     => db_all('SELECT full_no, subject, book_date FROM book_numbers WHERE created_by = ? ORDER BY id', 'i', [$uid]),
+        'plc_groups'       => db_all('SELECT g.academic_year, g.semester, d.name AS department, m.committee_role FROM plc_members m JOIN plc_groups g ON g.id = m.group_id JOIN departments d ON d.id = g.department_id WHERE m.user_id = ? ORDER BY g.id', 'i', [$uid]),
+        'plc_observations' => db_all('SELECT observe_date, topic, class_group, created_at FROM plc_observations WHERE observer_id = ? ORDER BY id', 'i', [$uid]),
+        'plc_signed'       => db_all('SELECT entity, entity_id, slot, comment, signed_at FROM plc_signatures WHERE user_id = ? ORDER BY id', 'i', [$uid]),
+        'has_signature'    => (bool)db_val('SELECT signature IS NOT NULL FROM users WHERE id = ?', 'i', [$uid]),
+        'position'         => db_val('SELECT position FROM users WHERE id = ?', 'i', [$uid]),
         'ledger_entries'   => (int)db_val('SELECT COUNT(*) FROM ledger_entries WHERE created_by = ?', 'i', [$uid]),
         'activity_logs'    => db_all('SELECT action, detail, ip, created_at FROM activity_logs WHERE user_id = ? ORDER BY id', 'i', [$uid]),
     ];
@@ -138,7 +142,8 @@ function pdpa_anonymize_user(int $uid): void
     $u = db_row('SELECT * FROM users WHERE id = ?', 'i', [$uid]);
     if (!$u) return;
     delete_stored_file($u['avatar']);
-    db_exec("UPDATE users SET username = ?, fullname = ?, email = NULL, phone = NULL, avatar = NULL, google_sub = NULL, google_email = NULL, status = 'disabled',
+    if (!empty($u['signature']) && ($sig = plc_signature_path($u['signature']))) @unlink($sig); // ลายมือชื่อ PLC
+    db_exec("UPDATE users SET username = ?, fullname = ?, email = NULL, phone = NULL, avatar = NULL, signature = NULL, position = NULL, google_sub = NULL, google_email = NULL, status = 'disabled',
              password_hash = ?, anonymized_at = NOW() WHERE id = ?", 'sssi',
         ['deleted_' . $uid, 'ผู้ใช้ที่ลบข้อมูลแล้ว #' . $uid, password_hash(bin2hex(random_bytes(16)), PASSWORD_DEFAULT), $uid]);
     db_exec('UPDATE activity_logs SET ip = NULL WHERE user_id = ?', 'i', [$uid]);

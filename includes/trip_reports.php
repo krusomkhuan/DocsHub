@@ -90,10 +90,13 @@ function trip_resize(GdImage $src, int $max)
  * ตรวจสอบ หมุนตาม EXIF ย่อขนาด แล้วบันทึกภาพเป็น JPEG พร้อมภาพย่อ
  * คืนค่า [file_name, width, height, file_size] หรือโยน RuntimeException
  */
-function trip_save_image(array $file): array
+function trip_save_image(array $file, string $folder = 'trips', string $category = 'trip-reports', string $prefix = 'trip_'): array
 {
     if ($file['error'] !== UPLOAD_ERR_OK) {
         throw new RuntimeException('อัปโหลดภาพ ' . $file['name'] . ' ไม่สำเร็จ');
+    }
+    if (!function_exists('imagecreatetruecolor')) {
+        throw new RuntimeException('เซิร์ฟเวอร์ไม่มีส่วนขยาย GD จึงอัปโหลดภาพประกอบไม่ได้ กรุณาแจ้งผู้ดูแลระบบให้เปิด extension=gd ใน php.ini');
     }
     if ($file['size'] > 15 * 1024 * 1024) {
         throw new RuntimeException('ภาพ ' . $file['name'] . ' มีขนาดเกิน 15 MB');
@@ -121,7 +124,7 @@ function trip_save_image(array $file): array
     imagefill($flat, 0, 0, imagecolorallocate($flat, 255, 255, 255));
     imagecopy($flat, $src, 0, 0, 0, 0, imagesx($src), imagesy($src));
 
-    $sub = 'trips/' . date('Y/m');
+    $sub = $folder . '/' . date('Y/m');
     $dir = UPLOAD_DIR . '/' . $sub;
     if (!is_dir($dir) && !mkdir($dir, 0775, true)) {
         throw new RuntimeException('ไม่สามารถสร้างโฟลเดอร์จัดเก็บภาพได้');
@@ -135,14 +138,14 @@ function trip_save_image(array $file): array
     // Google Drive: ส่งภาพหลักและภาพย่อ เก็บเป็น "gdrive:<ภาพหลัก>|<ภาพย่อ>"
     // (เก็บใน Drive เท่านั้น: ส่งไม่สำเร็จจะลบไฟล์ชั่วคราวทั้งคู่ และไม่ทิ้งภาพครึ่งเดียวไว้ใน Drive)
     try {
-        $mainRef = storage_push($base . '.jpg', 'trip_' . basename($base) . '.jpg', 'trip-reports');
+        $mainRef = storage_push($base . '.jpg', $prefix . basename($base) . '.jpg', $category);
     } catch (RuntimeException $ex) {
         @unlink(UPLOAD_DIR . '/' . $base . '-t.jpg');
         throw $ex;
     }
     if (storage_is_drive($mainRef)) {
         try {
-            $thumbRef = storage_push($base . '-t.jpg', 'trip_' . basename($base) . '-t.jpg', 'trip-reports');
+            $thumbRef = storage_push($base . '-t.jpg', $prefix . basename($base) . '-t.jpg', $category);
         } catch (RuntimeException $ex) {
             storage_delete($mainRef);
             throw $ex;

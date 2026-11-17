@@ -123,8 +123,9 @@ function run_system_checks(bool $httpProbe = true): array
     $g[] = sc_item($db->character_set_name() === 'utf8mb4' ? 'ok' : 'warn', 'ชุดอักขระการเชื่อมต่อ', $db->character_set_name());
     $ver = (int)setting('db_version', '1');
     $g[] = sc_item($ver >= DB_SCHEMA_LATEST ? 'ok' : 'fail', 'เวอร์ชันโครงสร้างฐานข้อมูล', $ver . ' / ล่าสุด ' . DB_SCHEMA_LATEST);
-    $expected = ['departments', 'users', 'doc_types', 'categories', 'documents', 'book_numbers', 'settings', 'activity_logs', 'trip_reports', 'trip_report_images',
-                 'academic_years', 'ledger_categories', 'ledger_entries', 'ledger_managers', 'pdpa_policies', 'pdpa_consents', 'pdpa_requests', 'book_number_starts', 'photo_albums'];
+    $expected = ['departments', 'users', 'doc_types', 'categories', 'documents', 'settings', 'activity_logs', 'trip_reports', 'trip_report_images',
+                 'academic_years', 'ledger_categories', 'ledger_entries', 'ledger_managers', 'pdpa_policies', 'pdpa_consents', 'pdpa_requests', 'photo_albums',
+                 'plc_groups', 'plc_members', 'plc_problems', 'plc_meetings', 'plc_attendees', 'plc_observations', 'plc_signatures'];
     $have = array_column($db->query('SHOW TABLES')->fetch_all(), 0);
     $miss = array_diff($expected, $have);
     $g[] = sc_item($miss ? 'fail' : 'ok', 'ตารางในฐานข้อมูล', $miss ? 'ขาด: ' . implode(', ', $miss) : 'ครบ ' . count($expected) . ' ตาราง');

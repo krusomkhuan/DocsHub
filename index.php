@@ -19,7 +19,7 @@ $latest = db_all("SELECT d.*, t.name AS type_name, t.color, dp.name AS dept_name
 $popular = db_all("SELECT d.id, d.title, d.file_ext, d.downloads FROM documents d
                    WHERE $visible AND d.downloads > 0 ORDER BY d.downloads DESC LIMIT 5");
 $totalDocs = array_sum($counts);
-$totalBooks = (int)db_val('SELECT COUNT(*) FROM book_numbers WHERE is_cancelled = 0');
+$totalAlbums = (int)db_val("SELECT COUNT(*) FROM photo_albums WHERE status = 'approved'");
 $totalUsers = (int)db_val("SELECT COUNT(*) FROM users WHERE status = 'active'");
 
 require __DIR__ . '/includes/header.php';
@@ -46,7 +46,7 @@ require __DIR__ . '/includes/header.php';
       <div class="col-lg-4 d-none d-lg-block">
         <div class="row g-2 text-center">
           <div class="col-4"><div class="bg-white bg-opacity-10 rounded-3 p-3"><div class="fs-3 fw-semibold"><?= number_format($totalDocs) ?></div><small>เอกสาร</small></div></div>
-          <div class="col-4"><div class="bg-white bg-opacity-10 rounded-3 p-3"><div class="fs-3 fw-semibold"><?= number_format($totalBooks) ?></div><small>เลขหนังสือ</small></div></div>
+          <div class="col-4"><div class="bg-white bg-opacity-10 rounded-3 p-3"><div class="fs-3 fw-semibold"><?= number_format($totalAlbums) ?></div><small>อัลบั้มภาพ</small></div></div>
           <div class="col-4"><div class="bg-white bg-opacity-10 rounded-3 p-3"><div class="fs-3 fw-semibold"><?= number_format($totalUsers) ?></div><small>สมาชิก</small></div></div>
         </div>
       </div>
@@ -72,12 +72,12 @@ require __DIR__ . '/includes/header.php';
       </div>
     <?php endforeach; ?>
     <div class="col-6 col-md-4 col-xl">
-      <a class="text-decoration-none text-body" href="<?= url(is_logged_in() ? 'book-numbers.php' : 'login.php') ?>">
+      <a class="text-decoration-none text-body" href="<?= url(is_logged_in() ? 'plc.php' : 'login.php?next=' . urlencode(BASE_URL . '/plc.php')) ?>">
         <div class="card type-card shadow-sm">
           <div class="card-body">
-            <span class="type-icon bg-secondary-subtle text-secondary-emphasis mb-3"><i class="bi bi-123"></i></span>
-            <h5 class="card-title mb-1">ออกเลขหนังสือ</h5>
-            <div class="small text-muted mb-2">ออกเลขที่หนังสือราชการ แยกตามแผนกวิชา</div>
+            <span class="type-icon bg-secondary-subtle text-secondary-emphasis mb-3"><i class="bi bi-people"></i></span>
+            <h5 class="card-title mb-1">PLC</h5>
+            <div class="small text-muted mb-2">ชุมชนการเรียนรู้ทางวิชาชีพของครู</div>
             <span class="badge rounded-pill text-bg-light">สำหรับสมาชิก</span>
           </div>
         </div>

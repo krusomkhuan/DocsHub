@@ -121,3 +121,35 @@ document.addEventListener('click', function (e) {
     ta.remove();
   }
 });
+
+// ปุ่มรูปตาเปิด/ปิดดูรหัสผ่าน ในทุกช่อง <input type="password"> (ยกเว้นที่ใส่ data-no-toggle)
+(function () {
+  document.querySelectorAll('input[type=password]:not([data-no-toggle])').forEach(function (input) {
+    var group = input.parentElement.classList.contains('input-group') ? input.parentElement : null;
+    if (!group) {
+      group = document.createElement('div');
+      group.className = 'input-group' + (input.classList.contains('form-control-sm') ? ' input-group-sm' : '');
+      // ย้ายระยะห่าง (mb-*/mt-*) จากช่องไปที่กลุ่ม
+      Array.prototype.slice.call(input.classList).forEach(function (c) {
+        if (/^m[tb]-\d$/.test(c)) { input.classList.remove(c); group.classList.add(c); }
+      });
+      input.parentNode.insertBefore(group, input);
+      group.appendChild(input);
+    }
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'btn btn-outline-secondary';
+    btn.setAttribute('aria-label', 'แสดงรหัสผ่าน');
+    btn.title = 'แสดงรหัสผ่าน';
+    btn.innerHTML = '<i class="bi bi-eye"></i>';
+    btn.addEventListener('click', function () {
+      var show = input.type === 'password';
+      input.type = show ? 'text' : 'password';
+      btn.innerHTML = '<i class="bi ' + (show ? 'bi-eye-slash' : 'bi-eye') + '"></i>';
+      btn.title = show ? 'ซ่อนรหัสผ่าน' : 'แสดงรหัสผ่าน';
+      btn.setAttribute('aria-label', btn.title);
+      input.focus();
+    });
+    group.appendChild(btn);
+  });
+})();

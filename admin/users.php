@@ -28,7 +28,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         delete_stored_file(db_val('SELECT avatar FROM users WHERE id = ?', 'i', [$id]));
         db_exec('DELETE FROM users WHERE id = ?', 'i', [$id]);
         log_activity('user_delete', '#' . $id);
-        flash('success', 'ลบสมาชิกแล้ว (เอกสารและเลขหนังสือที่เคยสร้างยังคงอยู่)');
+        flash('success', 'ลบสมาชิกแล้ว (เอกสารที่เคยอัปโหลดยังคงอยู่)');
         redirect('admin/users.php');
     }
 
@@ -142,7 +142,7 @@ require __DIR__ . '/../includes/admin_header.php';
         <select class="form-select" name="role"<?= (int)($edit['id'] ?? 0) === $me ? ' disabled' : '' ?>>
           <?php foreach (['member', 'staff', 'admin'] as $r): ?><option value="<?= $r ?>"<?= ($edit['role'] ?? 'member') === $r ? ' selected' : '' ?>><?= role_label($r) ?></option><?php endforeach; ?>
         </select>
-        <div class="form-text">สมาชิก: อัปโหลด/ออกเลขของแผนกตน · เจ้าหน้าที่: จัดการเอกสาร/เลขหนังสือทุกแผนก · ผู้ดูแล: ทุกอย่าง</div></div>
+        <div class="form-text">สมาชิก: อัปโหลดเอกสาร ใช้ระบบ PLC/บัญชีของแผนกตน · เจ้าหน้าที่: จัดการเอกสารทุกแผนก · ผู้ดูแล: ทุกอย่าง</div></div>
       <div class="col-md-4"><label class="form-label">สถานะ</label>
         <select class="form-select" name="status"<?= (int)($edit['id'] ?? 0) === $me ? ' disabled' : '' ?>>
           <?php foreach (['active' => 'ใช้งาน', 'pending' => 'รออนุมัติ', 'disabled' => 'ระงับ'] as $k => $lbl): ?><option value="<?= $k ?>"<?= ($edit['status'] ?? 'active') === $k ? ' selected' : '' ?>><?= $lbl ?></option><?php endforeach; ?>

@@ -48,7 +48,7 @@ $requests = db_all('SELECT * FROM pdpa_requests WHERE user_id = ? ORDER BY id DE
 $stats = [
     'เอกสารที่อัปโหลด'       => (int)db_val('SELECT COUNT(*) FROM documents WHERE uploaded_by = ?', 'i', [$uid]),
     'รายงานการไปราชการ'      => (int)db_val('SELECT COUNT(*) FROM trip_reports WHERE created_by = ?', 'i', [$uid]),
-    'เลขหนังสือที่ออก'        => (int)db_val('SELECT COUNT(*) FROM book_numbers WHERE created_by = ?', 'i', [$uid]),
+    'กลุ่ม PLC ที่เป็นสมาชิก'   => (int)db_val('SELECT COUNT(*) FROM plc_members WHERE user_id = ?', 'i', [$uid]),
     'รายการบัญชีที่บันทึก'     => (int)db_val('SELECT COUNT(*) FROM ledger_entries WHERE created_by = ?', 'i', [$uid]),
     'ประวัติการใช้งาน'         => (int)db_val('SELECT COUNT(*) FROM activity_logs WHERE user_id = ?', 'i', [$uid]),
 ];

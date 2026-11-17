@@ -4,7 +4,7 @@
  * เก็บเวอร์ชันโครงสร้างไว้ที่ settings.db_version ทำงานเฉพาะครั้งแรกที่ยังไม่ได้ปรับ
  */
 // เวอร์ชันโครงสร้างล่าสุด — เพิ่มทุกครั้งที่เพิ่มขั้นตอนด้านล่าง (ใช้ในหน้าตรวจสอบระบบ)
-if (!defined('DB_SCHEMA_LATEST')) define('DB_SCHEMA_LATEST', 14);
+if (!defined('DB_SCHEMA_LATEST')) define('DB_SCHEMA_LATEST', 16);
 
 $dbVersion = (int)(db_val("SELECT svalue FROM settings WHERE skey = 'db_version'") ?? 1);
 
@@ -279,4 +279,231 @@ if ($dbVersion < 13) {
 
 if ($dbVersion < 14) {
     $db->query("INSERT INTO settings (skey, svalue) VALUES ('db_version', '14') ON DUPLICATE KEY UPDATE svalue = '14'");
+}
+
+// v15: ระบบบริหารจัดการ PLC (ชุมชนการเรียนรู้ทางวิชาชีพ) — เปิดใช้รายแผนก ลายมือชื่อครู และการอนุมัติในระบบ
+if ($dbVersion < 15) {
+    $db->query("ALTER TABLE departments
+        ADD COLUMN plc_enabled TINYINT(1) NOT NULL DEFAULT 0 COMMENT 'เปิดใช้ระบบ PLC',
+        ADD COLUMN plc_head_user_id INT DEFAULT NULL COMMENT 'หัวหน้าแผนก (ผู้ลงนามเอกสาร PLC)'");
+    $db->query("ALTER TABLE users
+        ADD COLUMN position VARCHAR(100) DEFAULT NULL COMMENT 'ตำแหน่ง/วิทยฐานะ เช่น ครู คศ.1',
+        ADD COLUMN signature VARCHAR(255) DEFAULT NULL COMMENT 'ไฟล์ลายมือชื่อ (uploads/docs/signatures)'");
+    $db->query("UPDATE departments SET plc_enabled = 1 WHERE code = 'ทธ'");
+
+    $db->query("CREATE TABLE IF NOT EXISTS plc_groups (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        department_id INT NOT NULL,
+        name VARCHAR(255) DEFAULT NULL,             -- ชื่อกลุ่ม (ว่าง = ใช้ชื่อแผนก)
+        field_name VARCHAR(150) DEFAULT NULL,       -- สาขาวิชา
+        academic_year SMALLINT NOT NULL,            -- ปีการศึกษา (พ.ศ.)
+        semester TINYINT NOT NULL DEFAULT 1,
+        meeting_place VARCHAR(255) DEFAULT NULL,
+        meeting_schedule VARCHAR(255) DEFAULT NULL, -- วันเวลาประชุม เช่น วันพุธ เวลา 18.00-20.00 น.
+        memo_no VARCHAR(100) DEFAULT NULL,          -- เลขที่บันทึกข้อความขออนุญาตจัดตั้งกลุ่ม
+        memo_date DATE DEFAULT NULL,
+        request_date DATE DEFAULT NULL,             -- วันที่แบบคำร้องขอจัดตั้งกลุ่ม
+        announce_date DATE DEFAULT NULL,            -- วันที่ประกาศวิทยาลัย
+        status ENUM('draft','submitted','approved') NOT NULL DEFAULT 'draft',
+        reject_note VARCHAR(500) DEFAULT NULL,
+        created_by INT DEFAULT NULL,
+        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT NULL,
+        KEY idx_plc_group_term (academic_year, semester),
+        CONSTRAINT fk_plcg_dept FOREIGN KEY (department_id) REFERENCES departments(id),
+        CONSTRAINT fk_plcg_user FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+    $db->query("CREATE TABLE IF NOT EXISTS plc_members (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        group_id INT NOT NULL,
+        user_id INT DEFAULT NULL,                   -- ว่าง = บุคคลภายนอกที่ไม่มีบัญชี (เช่น ผู้เชี่ยวชาญ)
+        guest_name VARCHAR(150) DEFAULT NULL,
+        position_title VARCHAR(150) DEFAULT NULL,   -- ตำแหน่ง เช่น รองผู้อำนวยการฝ่ายวิชาการ
+        committee_role ENUM('chair','vice_chair','member','secretary','expert') NOT NULL DEFAULT 'member',
+        sort_order INT NOT NULL DEFAULT 0,
+        UNIQUE KEY uq_plc_member (group_id, user_id),
+        CONSTRAINT fk_plcm_group FOREIGN KEY (group_id) REFERENCES plc_groups(id) ON DELETE CASCADE,
+        CONSTRAINT fk_plcm_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+    $db->query("CREATE TABLE IF NOT EXISTS plc_problems (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        group_id INT NOT NULL,
+        model_teacher_id INT DEFAULT NULL,          -- เจ้าของปัญหา (Model Teacher)
+        theme VARCHAR(500) NOT NULL,                -- ประเด็นปัญหาที่จะพัฒนา
+        subject_name VARCHAR(255) DEFAULT NULL,     -- รายวิชา
+        proposal_date DATE DEFAULT NULL,            -- วันที่แบบคำร้องขอเสนอประเด็นปัญหา
+        memo_no VARCHAR(100) DEFAULT NULL,          -- เลขที่บันทึกข้อความส่งแบบบันทึก
+        memo_date DATE DEFAULT NULL,
+        solutions TEXT,                             -- แนวทางแก้ปัญหา (บรรทัดละข้อ)
+        benefits TEXT,                              -- ประโยชน์ที่ได้รับ (บรรทัดละข้อ)
+        plan_start DATE DEFAULT NULL,
+        plan_end DATE DEFAULT NULL,
+        status ENUM('draft','submitted','approved') NOT NULL DEFAULT 'draft',
+        reject_note VARCHAR(500) DEFAULT NULL,
+        created_by INT DEFAULT NULL,
+        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT NULL,
+        CONSTRAINT fk_plcp_group FOREIGN KEY (group_id) REFERENCES plc_groups(id) ON DELETE CASCADE,
+        CONSTRAINT fk_plcp_model FOREIGN KEY (model_teacher_id) REFERENCES users(id) ON DELETE SET NULL,
+        CONSTRAINT fk_plcp_user FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+    // ตารางย่อยของประเด็นปัญหา: ปัญหา-สาเหตุ-ลำดับความสำคัญ / กิจกรรมครู-ผู้เรียน / วัตถุประสงค์-เครื่องมือ-เกณฑ์ / ขั้นตอนแผนปฏิบัติการ
+    $db->query("CREATE TABLE IF NOT EXISTS plc_issues (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        problem_id INT NOT NULL,
+        issue TEXT NOT NULL,
+        causes TEXT,
+        priority TINYINT NOT NULL DEFAULT 1,
+        CONSTRAINT fk_plci_problem FOREIGN KEY (problem_id) REFERENCES plc_problems(id) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+    $db->query("CREATE TABLE IF NOT EXISTS plc_activities (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        problem_id INT NOT NULL,
+        teacher_activity TEXT,
+        student_activity TEXT,
+        sort_order INT NOT NULL DEFAULT 0,
+        CONSTRAINT fk_plca_problem FOREIGN KEY (problem_id) REFERENCES plc_problems(id) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+    $db->query("CREATE TABLE IF NOT EXISTS plc_measures (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        problem_id INT NOT NULL,
+        objective TEXT NOT NULL,
+        tool TEXT,
+        criteria TEXT,
+        sort_order INT NOT NULL DEFAULT 0,
+        CONSTRAINT fk_plcme_problem FOREIGN KEY (problem_id) REFERENCES plc_problems(id) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+    $db->query("CREATE TABLE IF NOT EXISTS plc_plan_steps (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        problem_id INT NOT NULL,
+        step_no TINYINT NOT NULL,
+        activity VARCHAR(500) NOT NULL,
+        role_text VARCHAR(255) DEFAULT NULL,
+        plan_date DATE DEFAULT NULL,
+        minutes SMALLINT DEFAULT NULL,
+        CONSTRAINT fk_plcs_problem FOREIGN KEY (problem_id) REFERENCES plc_problems(id) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+    // การประชุม/กิจกรรม PLC (ใช้คำนวณชั่วโมง) — kind=reflect เก็บแบบบันทึกการสะท้อนผลใน details (JSON)
+    $db->query("CREATE TABLE IF NOT EXISTS plc_meetings (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        group_id INT NOT NULL,
+        problem_id INT DEFAULT NULL,
+        kind ENUM('finding','solution','general','teach','reflect','summary') NOT NULL DEFAULT 'general',
+        step_no TINYINT DEFAULT NULL,
+        meeting_date DATE NOT NULL,
+        start_time TIME NOT NULL,
+        end_time TIME NOT NULL,
+        place VARCHAR(255) DEFAULT NULL,
+        topic VARCHAR(255) NOT NULL,
+        content TEXT,
+        details TEXT,
+        recorder_id INT DEFAULT NULL,
+        created_by INT DEFAULT NULL,
+        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT NULL,
+        KEY idx_plc_meeting_date (group_id, meeting_date),
+        CONSTRAINT fk_plcmt_group FOREIGN KEY (group_id) REFERENCES plc_groups(id) ON DELETE CASCADE,
+        CONSTRAINT fk_plcmt_problem FOREIGN KEY (problem_id) REFERENCES plc_problems(id) ON DELETE SET NULL,
+        CONSTRAINT fk_plcmt_recorder FOREIGN KEY (recorder_id) REFERENCES users(id) ON DELETE SET NULL,
+        CONSTRAINT fk_plcmt_user FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+    $db->query("CREATE TABLE IF NOT EXISTS plc_attendees (
+        meeting_id INT NOT NULL,
+        member_id INT NOT NULL,
+        PRIMARY KEY (meeting_id, member_id),
+        CONSTRAINT fk_plcat_meeting FOREIGN KEY (meeting_id) REFERENCES plc_meetings(id) ON DELETE CASCADE,
+        CONSTRAINT fk_plcat_member FOREIGN KEY (member_id) REFERENCES plc_members(id) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+    // แบบสังเกตการสอน (ผู้สังเกตบันทึกคนละ 1 แบบ) — scores เก็บคะแนนรายข้อ (JSON)
+    $db->query("CREATE TABLE IF NOT EXISTS plc_observations (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        problem_id INT NOT NULL,
+        observer_id INT DEFAULT NULL,
+        observe_date DATE NOT NULL,
+        start_time TIME NOT NULL,
+        end_time TIME NOT NULL,
+        class_group VARCHAR(150) DEFAULT NULL,      -- ระดับชั้น/กลุ่มเรียน
+        topic VARCHAR(255) DEFAULT NULL,            -- หน่วย/เรื่องที่สอน
+        students_total SMALLINT DEFAULT NULL,
+        students_present SMALLINT DEFAULT NULL,
+        scores TEXT,
+        student_behavior TEXT,
+        strengths TEXT,
+        improvements TEXT,
+        suggestions TEXT,
+        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT NULL,
+        CONSTRAINT fk_plco_problem FOREIGN KEY (problem_id) REFERENCES plc_problems(id) ON DELETE CASCADE,
+        CONSTRAINT fk_plco_observer FOREIGN KEY (observer_id) REFERENCES users(id) ON DELETE SET NULL
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+    $db->query("CREATE TABLE IF NOT EXISTS plc_photos (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        group_id INT NOT NULL,
+        problem_id INT DEFAULT NULL,
+        file_name VARCHAR(255) NOT NULL,
+        caption VARCHAR(255) DEFAULT NULL,
+        sort_order INT NOT NULL DEFAULT 0,
+        created_by INT DEFAULT NULL,
+        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT fk_plcph_group FOREIGN KEY (group_id) REFERENCES plc_groups(id) ON DELETE CASCADE,
+        CONSTRAINT fk_plcph_problem FOREIGN KEY (problem_id) REFERENCES plc_problems(id) ON DELETE CASCADE,
+        CONSTRAINT fk_plcph_user FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+    // ลงนาม/อนุมัติในระบบ (หนึ่งแถวต่อช่องลงนามของเอกสาร)
+    $db->query("CREATE TABLE IF NOT EXISTS plc_signatures (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        entity ENUM('group','problem','meeting','observation') NOT NULL,
+        entity_id INT NOT NULL,
+        slot VARCHAR(20) NOT NULL,                  -- chair, head, model, recorder, deputy, director, observer
+        user_id INT DEFAULT NULL,
+        comment VARCHAR(500) DEFAULT NULL,
+        signed_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE KEY uq_plc_sig (entity, entity_id, slot),
+        CONSTRAINT fk_plcsig_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+    $db->query("INSERT IGNORE INTO settings (skey, svalue) VALUES
+        ('plc_deputy_user_id', ''), ('plc_deputy_name', ''), ('plc_deputy_position', 'รองผู้อำนวยการฝ่ายวิชาการ'),
+        ('plc_director_user_id', ''), ('plc_director_name', ''), ('plc_director_position', 'ผู้อำนวยการ'),
+        ('plc_committee_title', 'ประธานคณะกรรมการดำเนินงานขับเคลื่อนชุมชนการเรียนรู้ทางวิชาชีพ (PLC)')");
+    $db->query("INSERT INTO settings (skey, svalue) VALUES ('db_version', '15') ON DUPLICATE KEY UPDATE svalue = '15'");
+}
+
+// v16: ยกเลิกระบบออกเลขหนังสือ — เก็บข้อมูลเดิมเป็นไฟล์ JSON ใน backups/ ก่อน แล้วจึงลบตาราง (ถ้าเขียนไฟล์ไม่ได้ จะไม่ลบ)
+if ($dbVersion < 16) {
+    $hasBooks = (bool)db_val("SHOW TABLES LIKE 'book_numbers'");
+    $saved = true;
+    if ($hasBooks) {
+        $dump = [
+            'removed_at'         => date('c'),
+            'note'               => 'ข้อมูลระบบออกเลขหนังสือที่ถูกยกเลิกใน Docs Hub 1.24.0 (schema v16)',
+            'book_numbers'       => db_all('SELECT b.*, d.code AS dept_code, d.name AS dept_name FROM book_numbers b LEFT JOIN departments d ON d.id = b.department_id ORDER BY b.id'),
+            'book_number_starts' => db_val("SHOW TABLES LIKE 'book_number_starts'") ? db_all('SELECT * FROM book_number_starts') : [],
+            'settings'           => db_all("SELECT * FROM settings WHERE skey IN ('book_prefix', 'book_format')"),
+        ];
+        // ตารางสำรองชั่วคราวจากสคริปต์แก้ข้อมูลเลขหนังสือ (bak_book_*) รวมไว้ในไฟล์เดียวกัน
+        foreach (array_column(db_all("SHOW TABLES LIKE 'bak\_book%'"), null) as $t) {
+            $name = array_values($t)[0];
+            $dump['extra_tables'][$name] = db_all('SELECT * FROM `' . str_replace('`', '', $name) . '`');
+        }
+        $dir = APP_ROOT . '/backups';
+        if (!is_dir($dir)) @mkdir($dir, 0775, true);
+        $file = $dir . '/removed-book-numbers-' . date('Ymd-His') . '.json';
+        $saved = @file_put_contents($file, json_encode($dump, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)) !== false;
+    }
+    if ($saved) {
+        foreach (array_keys($dump['extra_tables'] ?? []) as $name) $db->query('DROP TABLE IF EXISTS `' . str_replace('`', '', $name) . '`');
+        $db->query('DROP TABLE IF EXISTS book_number_starts');
+        $db->query('DROP TABLE IF EXISTS book_numbers');
+        if (db_val("SHOW COLUMNS FROM doc_types LIKE 'has_order_no'")) $db->query('ALTER TABLE doc_types DROP COLUMN has_order_no');
+        $db->query("DELETE FROM settings WHERE skey IN ('book_prefix', 'book_format')");
+        $db->query("INSERT INTO settings (skey, svalue) VALUES ('db_version', '16') ON DUPLICATE KEY UPDATE svalue = '16'");
+    }
 }

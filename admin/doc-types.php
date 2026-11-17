@@ -47,7 +47,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'sort_order'   => (int)post('sort_order'),
             'has_subject'  => post('has_subject') === '1' ? 1 : 0,
             'has_semester' => post('has_semester') === '1' ? 1 : 0,
-            'has_order_no' => post('has_order_no') === '1' ? 1 : 0,
             'owner_label'  => mb_substr(post('owner_label'), 0, 100) ?: 'ผู้รับผิดชอบ',
         ];
         if ($data['slug'] === '') {
@@ -58,13 +57,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         elseif (db_val('SELECT id FROM doc_types WHERE slug = ? AND id <> ?', 'si', [$data['slug'], $id])) $errors[] = 'ชื่อใน URL นี้ถูกใช้แล้ว';
 
         if (!$errors) {
-            $types = 'sssssiiiis';
+            $types = 'sssssiiis';
             if ($id) {
-                db_exec('UPDATE doc_types SET name=?, slug=?, icon=?, color=?, description=?, sort_order=?, has_subject=?, has_semester=?, has_order_no=?, owner_label=? WHERE id=?',
+                db_exec('UPDATE doc_types SET name=?, slug=?, icon=?, color=?, description=?, sort_order=?, has_subject=?, has_semester=?, owner_label=? WHERE id=?',
                     $types . 'i', array_merge(array_values($data), [$id]));
                 log_activity('doctype_update', $data['name']);
             } else {
-                $id = db_exec('INSERT INTO doc_types (name, slug, icon, color, description, sort_order, has_subject, has_semester, has_order_no, owner_label) VALUES (?,?,?,?,?,?,?,?,?,?)',
+                $id = db_exec('INSERT INTO doc_types (name, slug, icon, color, description, sort_order, has_subject, has_semester, owner_label) VALUES (?,?,?,?,?,?,?,?,?)',
                     $types, array_values($data));
                 log_activity('doctype_create', $data['name']);
             }
@@ -117,7 +116,7 @@ require __DIR__ . '/../includes/admin_header.php';
       <div class="col-md-4"><label class="form-label">ชื่อช่อง "บุคคล"</label><input class="form-control" name="owner_label" maxlength="100" value="<?= e($edit['owner_label'] ?? 'ผู้รับผิดชอบ') ?>">
         <div class="form-text">เช่น ผู้รับ, ผู้สอน, ผู้แต่ง, ผู้จัดทำ</div></div>
       <div class="col-md-8 d-flex flex-column justify-content-center gap-1">
-        <?php foreach (['has_subject' => 'แสดงช่องรหัสวิชา / ชื่อวิชา', 'has_semester' => 'แสดงช่องภาคเรียน', 'has_order_no' => 'ให้ออกเลขคำสั่งอัตโนมัติจากทะเบียนเลขหนังสือได้'] as $k => $lbl): ?>
+        <?php foreach (['has_subject' => 'แสดงช่องรหัสวิชา / ชื่อวิชา', 'has_semester' => 'แสดงช่องภาคเรียน'] as $k => $lbl): ?>
           <div class="form-check form-switch">
             <input class="form-check-input" type="checkbox" name="<?= $k ?>" value="1" id="f_<?= $k ?>"<?= !empty($edit[$k]) ? ' checked' : '' ?>>
             <label class="form-check-label" for="f_<?= $k ?>"><?= $lbl ?></label>
@@ -150,7 +149,6 @@ require __DIR__ . '/../includes/admin_header.php';
           <span class="badge text-bg-light"><?= e($t['owner_label']) ?></span>
           <?= $t['has_subject'] ? '<span class="badge text-bg-light">วิชา</span>' : '' ?>
           <?= $t['has_semester'] ? '<span class="badge text-bg-light">ภาคเรียน</span>' : '' ?>
-          <?= $t['has_order_no'] ? '<span class="badge text-bg-light">ออกเลขคำสั่ง</span>' : '' ?>
         </td>
         <td class="text-end"><a href="<?= url('admin/categories.php?type=' . $t['id']) ?>"><?= (int)$t['cats'] ?></a></td>
         <td class="text-end"><?= (int)$t['docs'] ?></td>

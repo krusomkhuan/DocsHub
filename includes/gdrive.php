@@ -498,6 +498,7 @@ const STORAGE_DOC_FOLDERS = [
 const STORAGE_OTHER_FOLDER = 'uploads/docs';
 const STORAGE_TRIP_FOLDER  = 'uploads/trips/reports'; // ภาพประกอบและไฟล์แนบรายงานไปราชการ
 const STORAGE_BACKUP_FOLDER = 'uploads/backups';     // ไฟล์สำรองข้อมูล (.zip)
+const STORAGE_PLC_FOLDER = 'uploads/plc';            // ภาพประกอบกิจกรรม PLC
 
 /**
  * เส้นทางโฟลเดอร์ย่อย (ภายในโฟลเดอร์ DocsHub ตาม Folder ID) ของแต่ละประเภทไฟล์
@@ -508,6 +509,7 @@ function storage_category_path(string $category): string
     if ($category === 'receipt') $path = trim(setting('gdrive_receipt_path', 'uploads/receipt'), '/ ');
     elseif ($category === 'trip-reports') $path = STORAGE_TRIP_FOLDER;
     elseif ($category === 'backups') $path = STORAGE_BACKUP_FOLDER;
+    elseif ($category === 'plc') $path = STORAGE_PLC_FOLDER;
     elseif (str_starts_with($category, 'doc:')) $path = STORAGE_DOC_FOLDERS[substr($category, 4)] ?? STORAGE_OTHER_FOLDER;
     else $path = STORAGE_OTHER_FOLDER;
     // Folder ID ชี้ที่โฟลเดอร์ uploads เอง → ตัด uploads/ ข้างหน้าออก ไม่สร้าง uploads ซ้อนใน uploads
@@ -623,7 +625,7 @@ function storage_organize_drive(): array
 /** สร้างโฟลเดอร์ย่อยทั้งหมดใน Drive ทันที (ไม่ต้องรอไฟล์แรก) คืนค่า [เส้นทาง => 'ok' หรือข้อความผิดพลาด] */
 function storage_ensure_all_folders(): array
 {
-    $cats = array_merge(array_map(fn($slug) => 'doc:' . $slug, array_keys(STORAGE_DOC_FOLDERS)), ['receipt', 'trip-reports', '', 'backups']);
+    $cats = array_merge(array_map(fn($slug) => 'doc:' . $slug, array_keys(STORAGE_DOC_FOLDERS)), ['receipt', 'trip-reports', 'plc', '', 'backups']);
     $out = [];
     foreach ($cats as $cat) {
         $p = storage_category_path($cat);

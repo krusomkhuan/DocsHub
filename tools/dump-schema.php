@@ -15,8 +15,9 @@ $install = in_array('--install', $argv, true);
 // ตารางที่เป็นข้อมูลตั้งต้นของระบบ (ไม่ใช่ข้อมูลส่วนบุคคล)
 $seedTables = ['doc_types', 'categories', 'departments', 'academic_years', 'pdpa_policies'];
 // settings ที่ส่งออกได้ (ค่าลับ/โทเคน/ข้อมูลติดต่อ DPO/ค่าเฉพาะเครื่อง ไม่ส่งออก)
-$safeSettings = ['allow_register', 'auto_approve_member', 'book_format', 'book_prefix', 'college_name', 'db_version',
-                 'google_allow_register', 'log_retention_days', 'max_upload_mb', 'site_name', 'site_slogan'];
+$safeSettings = ['allow_register', 'auto_approve_member', 'college_name', 'db_version',
+                 'google_allow_register', 'log_retention_days', 'max_upload_mb', 'site_name', 'site_slogan',
+                 'plc_deputy_position', 'plc_director_position', 'plc_committee_title'];
 $forced = ['storage_driver' => 'local', 'google_login_enabled' => '0'];
 
 $q = fn($v) => $v === null ? 'NULL' : "'" . $GLOBALS['db']->real_escape_string((string)$v) . "'";

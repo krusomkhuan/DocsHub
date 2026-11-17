@@ -44,8 +44,10 @@ $u = current_user();
         <li class="nav-item"><a class="nav-link<?= $activeNav === 'trip' ? ' active' : '' ?>" href="<?= url('trip-reports.php') ?>">รายงานไปราชการ</a></li>
         <li class="nav-item"><a class="nav-link<?= $activeNav === 'albums' ? ' active' : '' ?>" href="<?= url('photo-albums.php') ?>">คลังรูปภาพ</a></li>
         <?php if ($u): ?>
-          <li class="nav-item"><a class="nav-link<?= $activeNav === 'book' ? ' active' : '' ?>" href="<?= url('book-numbers.php') ?>">ออกเลขหนังสือ</a></li>
           <li class="nav-item"><a class="nav-link<?= $activeNav === 'mydocs' ? ' active' : '' ?>" href="<?= url('my-documents.php') ?>">เอกสารของฉัน</a></li>
+          <?php if (plc_can_access()): ?>
+            <li class="nav-item"><a class="nav-link<?= $activeNav === 'plc' ? ' active' : '' ?>" href="<?= url('plc.php') ?>" title="ชุมชนการเรียนรู้ทางวิชาชีพ"><i class="bi bi-people me-1"></i>PLC</a></li>
+          <?php endif; ?>
           <?php if ($ledgerDept = ledger_department()): $lp = ledger_perms($ledgerDept); ?>
             <li class="nav-item dropdown">
               <a class="nav-link dropdown-toggle<?= $activeNav === 'ledger' ? ' active' : '' ?>" href="#" data-bs-toggle="dropdown"><i class="bi bi-cash-coin me-1"></i>บัญชีแผนก</a>
